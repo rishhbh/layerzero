@@ -1,6 +1,5 @@
 const gemmaChat = async (req, res) => {
-    // const { prompt } = req.body;
-    const prompt = "explain me what is express how to implement CORS";
+    const { prompt } = req.body;
     try {
         const response = await fetch(`${process.env.OLLAMA_BASE_URL}/api/chat`, {
             method: "POST",
@@ -23,7 +22,6 @@ const gemmaChat = async (req, res) => {
         const data = await response.json();
         const output = data?.message?.content || "";
 
-        console.log(output);
         res.json({ output });
 
     } catch (err) {
