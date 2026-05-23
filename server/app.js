@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-// import connectWithDB from './config/db.js';
+import connectWithDB from './config/db.js';
 import aiChatRoute from './routes/aiChatRoute.js'
 
 const app = express();
@@ -17,5 +17,5 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`the server is currently running on: http://localhost:${PORT}`);
-    // connectWithDB();
+    connectWithDB();
 });

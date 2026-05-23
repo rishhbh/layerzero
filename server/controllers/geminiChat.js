@@ -21,6 +21,6 @@ const geminiChat = async (req, res) => {
     } catch (err) {
         console.log(`Some error occured while generating content: ${err}`);
     }
-}
+};
 
 export default geminiChat;
