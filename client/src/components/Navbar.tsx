@@ -9,10 +9,10 @@ const Navbar: React.FC = () => {
                     <div>
                         <Link to={'/'}><li className='font-bold text-2xl'>Layerzero</li></Link>
                     </div>
-                    <div className='flex flex-row gap-15 pr-10'>
+                    <div className='flex flex-row gap-15 pr-10 font-black'>
                         <Link to={'https://github.com/render-thevoid'} target='__blank'><li>Github</li></Link>
-                        <li>About</li>
-                        <li>Sign Up</li>
+                        <Link to={'/about'}><li>About</li></Link>
+                        <Link to={'/signup'}><li>Sign Up</li></Link>
                     </div>
                 </ul>
             </div>
