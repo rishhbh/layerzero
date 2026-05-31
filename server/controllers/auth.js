@@ -76,3 +76,26 @@ export const loginUser = async (req, res) => {
         });
     }
 };
+
+export const logout = async (req, res) => {
+    try {
+        res.cookie("jwt", "", { maxAge: 0 });
+        res.status(200).json({
+            message: "The user has been logged out successfully!"
+        })
+    } catch {
+        res.status(500).json({
+            message: "Unable to logout the user!"
+        });
+    }
+};
+
+export const checkUser = async (req, res) => {
+    try {
+        return res.status(200).json(req.user);
+    } catch {
+        res.status(500).json({
+            message: "Unable to check the current user!"
+        });
+    }
+};

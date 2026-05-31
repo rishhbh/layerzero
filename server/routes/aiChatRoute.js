@@ -4,7 +4,7 @@ import geminiChat from '../controllers/geminiChat.js';
 
 const router = express.Router();
 
-router.get('/chat/gemma', gemmaChat);
-router.get('/chat/gemini', geminiChat);
+router.get('/gemma', gemmaChat);
+router.get('/gemini', geminiChat);
 
 export default router;
