@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { generateToken } from '../config/utils.js';
 
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
     const { name, email, password } = req.body;
     try {
         if (!name || !email || !password) {
@@ -41,7 +41,7 @@ export const registerUser = async (req, res) => {
 
 };
 
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => {
     const { email, password } = req.body;
     try {
         if (!email || !password) {
@@ -75,7 +75,7 @@ export const loginUser = async (req, res) => {
     }
 };
 
-export const logout = async (req, res) => {
+export const logout = async (req, res, next) => {
     try {
         res.cookie("jwt", "", { maxAge: 0 });
         res.status(200).json({
@@ -87,7 +87,7 @@ export const logout = async (req, res) => {
     }
 };
 
-export const checkUser = async (req, res) => {
+export const checkUser = async (req, res, next) => {
     try {
         return res.status(200).json(req.user);
     } catch {
