@@ -34,10 +34,9 @@ export const registerUser = async (req, res) => {
             name: newUser.name,
             email: newUser.email,
         });
-    } catch {
-        res.status(400).json({
-            message: "Some error occured while registering the user!"
-        });
+    } catch (err) {
+        err.customMessage = "Some error occured while registering the user!";
+        next(err);
     }
 
 };
@@ -71,9 +70,8 @@ export const loginUser = async (req, res) => {
             email: newUser.email,
         });
     } catch {
-        res.status(500).json({
-            message: "Some error occurred while logging in the user!"
-        });
+        err.customMessage = "Some error occurred while logging in the user!";
+        next(err);
     }
 };
 
@@ -84,9 +82,8 @@ export const logout = async (req, res) => {
             message: "The user has been logged out successfully!"
         })
     } catch {
-        res.status(500).json({
-            message: "Unable to logout the user!"
-        });
+        err.customMessage = "Unable to logout the user!";
+        next(err);
     }
 };
 
@@ -94,8 +91,7 @@ export const checkUser = async (req, res) => {
     try {
         return res.status(200).json(req.user);
     } catch {
-        res.status(500).json({
-            message: "Unable to check the current user!"
-        });
+        err.customMessage = "Unable to check current user!";
+        next(err);
     }
 };

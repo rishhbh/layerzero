@@ -1,4 +1,4 @@
-const gemmaChat = async (prompt) => {
+const gemmaClient = async (prompt) => {
     try {
         const response = await fetch(`${process.env.OLLAMA_BASE_URL}/api/chat`, {
             method: "POST",
@@ -28,4 +28,4 @@ const gemmaChat = async (prompt) => {
     }
 };
 
-export default gemmaChat;
+export default gemmaClient;
