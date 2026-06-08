@@ -1,5 +1,4 @@
-const gemmaChat = async (req, res) => {
-    const { prompt } = req.body;
+const gemmaChat = async (prompt) => {
     try {
         const response = await fetch(`${process.env.OLLAMA_BASE_URL}/api/chat`, {
             method: "POST",
@@ -22,12 +21,11 @@ const gemmaChat = async (req, res) => {
         const data = await response.json();
         const output = data?.message?.content || "";
 
-        res.json({ output });
+        return output;
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to get response from LLM" });
+        throw err;
     }
-}
+};
 
 export default gemmaChat;
