@@ -5,8 +5,7 @@ import geminiClient from "../config/geminiClient.js";
 import gemmaClient from "../config/gemmaClient.js";
 
 const scrapePage = async (req, res) => {
-    // const { url } = req.body;
-    const url = "https://en.wikipedia.org/wiki/Types_Riot";
+    const { url } = req.body;
     const { data } = await axios.get(url, {
         headers: {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/137.0.0.0 Safari/537.36"

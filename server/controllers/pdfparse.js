@@ -14,7 +14,7 @@ const parsePdf = async (req, res) => {
         });
 
     } catch (err) {
-        throw err;
+        next(err);
     }
 }
 
