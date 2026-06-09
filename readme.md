@@ -21,6 +21,43 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 
 ---
 
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center">
+      <strong>Homepage</strong><br>
+      <img src="./Homepage.png" width="400">
+    </td>
+    <td align="center">
+      <strong>About</strong><br>
+      <img src="./About.png" width="400">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Login</strong><br>
+      <img src="./Login.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Register</strong><br>
+      <img src="./Register.png" width="400">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>URL Summarizer</strong><br>
+      <img src="./URL.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Response</strong><br>
+      <img src="./Response.png" width="400">
+    </td>
+  </tr>
+</table>
+
+---
+
 ## Features
 
 ### Content Ingestion
