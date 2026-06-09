@@ -24,7 +24,7 @@ const summariseDoc = async (req, res, next) => {
             });
         }
 
-        const text = await extractText(req.file.buffer);
+        const text = await extractText(req.file);
         const summary = await model(text);
 
         res.json({

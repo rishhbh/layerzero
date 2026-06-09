@@ -6,7 +6,7 @@ import upload from '../services/multer.js';
 
 const router = express.Router();
 
-router.get('/web', protectRoute, scrapePage);
+router.post('/web', protectRoute, scrapePage);
 router.post(
     '/doc', 
     protectRoute, 

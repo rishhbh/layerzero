@@ -1,23 +1,55 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Layers, LogOut } from 'lucide-react';
 
-const Navbar: React.FC = () => {
-    return (
-        <div className='bg-gray-950 text-white/90 border-b border-white/10 p-3 pl-10'>
-            <div>
-                <ul className='flex justify-between items-center'>
-                    <div>
-                        <Link to={'/'}><li className='font-bold text-2xl'>Layerzero</li></Link>
-                    </div>
-                    <div className='flex flex-row gap-15 pr-10 font-black'>
-                        <Link to={'https://github.com/render-thevoid'} target='__blank'><li>Github</li></Link>
-                        <Link to={'/about'}><li>About</li></Link>
-                        <Link to={'/signup'}><li>Sign Up</li></Link>
-                    </div>
-                </ul>
-            </div>
+export const Navbar: React.FC = () => {
+  const { user, logout } = useAuth();
+
+  return (
+    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <Link to="/" className="flex items-center space-x-2 text-primary">
+          <Layers className="h-6 w-6" />
+          <span className="font-bold text-xl tracking-tight text-foreground">LayerZero</span>
+        </Link>
+        <div className="flex items-center space-x-16">
+          <Link to="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            About
+          </Link>
+          <a href="https://github.com/render-thevoid" target="_blank" rel="noreferrer" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            GitHub
+          </a>
+          {user ? (
+            <>
+              <Link to="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                Dashboard
+              </Link>
+              <button
+                onClick={logout}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center space-x-1 cursor-pointer"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="text-sm font-medium bg-primary text-background hover:bg-primary-hover px-4 py-2 rounded-md transition-colors"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
-    );
+      </div>
+    </nav>
+  );
 };
 
 export default Navbar;
