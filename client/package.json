@@ -10,8 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fontsource/geist-mono": "^5.2.8",
-    "@fontsource/inter": "^5.2.8",
     "@hookform/resolvers": "^5.4.0",
     "@radix-ui/react-label": "^2.1.9",
     "@radix-ui/react-slot": "^1.2.5",
