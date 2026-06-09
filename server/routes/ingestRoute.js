@@ -6,6 +6,6 @@ import { protectRoute } from '../middlewares/authMiddleware.js';
 const router = express.Router();
 
 router.get('/web', protectRoute, scrapePage);
-router.get('/pdf', protectRoute, summarisePdf);
+router.post('/pdf', protectRoute, summarisePdf);
 
 export default router;
