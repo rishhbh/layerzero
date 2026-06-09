@@ -27,31 +27,31 @@ Whether you're summarizing a research paper, technical documentation, blog post,
   <tr>
     <td align="center">
       <strong>Homepage</strong><br>
-      <img src="./Homepage.png" width="400">
+      <img src="./screenshots/homepage.png" width="400">
     </td>
     <td align="center">
       <strong>About</strong><br>
-      <img src="./About.png" width="400">
+      <img src="./screenshots/about.png" width="400">
     </td>
   </tr>
   <tr>
     <td align="center">
       <strong>Login</strong><br>
-      <img src="./Login.png" width="400">
+      <img src="./screenshots/login.png" width="400">
     </td>
     <td align="center">
       <strong>Register</strong><br>
-      <img src="./Register.png" width="400">
+      <img src="./screenshots/register.png" width="400">
     </td>
   </tr>
   <tr>
     <td align="center">
       <strong>URL Summarizer</strong><br>
-      <img src="./URL.png" width="400">
+      <img src="./screenshots/url.png" width="400">
     </td>
     <td align="center">
       <strong>Response</strong><br>
-      <img src="./Response.png" width="400">
+      <img src="./screenshots/response.png" width="400">
     </td>
   </tr>
 </table>
