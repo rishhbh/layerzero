@@ -65,11 +65,11 @@ export const loginUser = async (req, res, next) => {
 
         generateToken(user._id, res);
         res.status(200).json({
-            _id: newUser._id,
-            name: newUser.name,
-            email: newUser.email,
+            _id: user._id,
+            name: user.name,
+            email: user.email,
         });
-    } catch {
+    } catch (err) {
         err.customMessage = "Some error occurred while logging in the user!";
         next(err);
     }
@@ -81,7 +81,7 @@ export const logout = async (req, res, next) => {
         res.status(200).json({
             message: "The user has been logged out successfully!"
         })
-    } catch {
+    } catch (err) {
         err.customMessage = "Unable to logout the user!";
         next(err);
     }
@@ -90,7 +90,7 @@ export const logout = async (req, res, next) => {
 export const checkUser = async (req, res, next) => {
     try {
         return res.status(200).json(req.user);
-    } catch {
+    } catch (err) {
         err.customMessage = "Unable to check current user!";
         next(err);
     }

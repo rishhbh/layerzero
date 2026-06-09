@@ -1,8 +1,8 @@
 import gemmaClient from "../config/gemmaClient.js";
 import geminiClient from "../config/geminiClient.js";
-import parsePdf from "../config/pdfparse.js";
+import extractText from "../services/document.js";
 
-const summarisePdf = async (req, res, next) => {
+const summariseDoc = async (req, res, next) => {
     const { client } = req.body;
     const models = {
         gemma: gemmaClient,
@@ -24,16 +24,16 @@ const summarisePdf = async (req, res, next) => {
             });
         }
 
-        const text = await parsePdf(req.file.buffer);
+        const text = await extractText(req.file.buffer);
         const summary = await model(text);
 
         res.json({
             summary
         });
-
+        
     } catch (err) {
         next(err);
     }
 };
 
-export default summarisePdf;
+export default summariseDoc;
