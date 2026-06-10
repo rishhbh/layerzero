@@ -14,7 +14,7 @@ app.use(cors({
     origin: [
         "http://localhost:5173",
         "https://thelayerzero.vercel.app",
-        "https://layerzero.uchihamadara3472.workers.dev/"
+        "https://layerzero.uchihamadara3472.workers.dev"
     ],
     credentials: true
 }));
