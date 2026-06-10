@@ -6,7 +6,7 @@ const rateLimiter = rateLimit({
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     ipv6Subnet: 56,
-    message: "Too many authentication requests, try again later"
+    message: "AI requests limit reached, try again later"
 });
 
 export default rateLimiter;
