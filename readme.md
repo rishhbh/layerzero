@@ -2,7 +2,7 @@
 
 AI-powered content summarization platform built with React, Express.js, MongoDB, and a hybrid LLM architecture.
 
-LayerZero allows users to summarize PDFs and web content using either cloud-based or locally hosted language models. The platform focuses on simplicity, speed, and flexibility while providing a secure authentication layer and a clean content-processing pipeline.
+LayerZero allows users to summarize PDFs, DOCX files, and web content using either cloud-based or locally hosted language models. The platform focuses on simplicity, speed, and flexibility while providing a secure authentication layer and a clean content-processing pipeline.
 
 ---
 
@@ -63,34 +63,34 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 ### Content Ingestion
 
 * PDF document uploads
+* DOCX document uploads
 * Website URL summarization
 * Automatic text extraction
 * Article content parsing using Mozilla Readability
-* Clean preprocessing pipeline
+* Unified document processing pipeline with mimetype-based routing
 
 ### AI-Powered Summarization
 
 * Gemini integration
-* Gemma 4 integration
+* Gemma 4 integration via Ollama
 * User-selectable AI models
 * Hybrid cloud/local architecture
 * Flexible inference workflows
 
 ### Authentication & Security
 
-* JWT Authentication
+* JWT Authentication via httpOnly cookies
 * Protected API routes
-* Secure password hashing
+* Secure password hashing with bcrypt
 * Middleware-based authorization
-* User session validation
+* Rate limiting on auth and LLM routes via express-rate-limit
 
-### Performance
+### Infrastructure
 
-* Lightweight architecture
-* Fast content extraction
-* Efficient parsing pipeline
-* Local AI support
-* Minimal infrastructure requirements
+* Docker Compose setup for client, server, and Redis
+* Separate Dockerfiles for frontend and backend
+* Redis-ready architecture for caching
+* Local Ollama support via `host.docker.internal`
 
 ---
 
@@ -162,31 +162,38 @@ Summary
 
 ---
 
-## PDF Summarization Flow
+## Document Summarization Flow
 
 ```text
-PDF Upload
-    │
-    ▼
-Multer
-    │
-    ▼
-pdf-parse
-    │
-    ▼
-Text Extraction
-    │
-    ▼
-Selected Model
-    │
-    ▼
-Summary
+PDF / DOCX Upload
+       │
+       ▼
+    Multer
+       │
+       ▼
+  extractText()
+  (mimetype routing)
+       │
+   ┌───┴───┐
+   ▼       ▼
+pdf-parse mammoth
+   │       │
+   └───┬───┘
+       ▼
+ Text Extraction
+       │
+       ▼
+ Selected Model
+       │
+       ▼
+   Summary
 ```
 
 ### Technologies Used
 
 * Multer
 * pdf-parse
+* mammoth
 * Gemini API
 * Gemma 4
 
@@ -199,6 +206,7 @@ Summary
 * React
 * TypeScript
 * Tailwind CSS
+* shadcn/ui
 
 ### Backend
 
@@ -221,11 +229,19 @@ Summary
 * Mozilla Readability
 * Multer
 * pdf-parse
+* mammoth
+
+### Infrastructure
+
+* Docker
+* Docker Compose
+* Redis
+* express-rate-limit
 
 ### AI Models
 
-* Gemini
-* Gemma 4
+* Gemini 2.5 Flash
+* Gemma 4 (via Ollama)
 
 ---
 
@@ -280,10 +296,10 @@ Request Body
 
 ---
 
-#### PDF Summarization
+#### Document Summarization (PDF / DOCX)
 
 ```http
-POST /api/scrape/pdf
+POST /api/scrape/doc
 ```
 
 Content-Type
@@ -295,8 +311,8 @@ multipart/form-data
 Fields
 
 ```text
-document: file.pdf
-client: gemma
+document: file.pdf or file.docx
+client: gemini or gemma
 ```
 
 ---
@@ -306,41 +322,51 @@ client: gemma
 ```bash
 LayerZero/
 │
+├── docker-compose.yml
+│
 ├── client/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   └── services/
+│   ├── Dockerfile
+│   └── src/
+│       ├── components/
+│       ├── pages/
+│       ├── context/
+│       ├── layouts/
+│       └── lib/
 │
 ├── server/
+│   ├── Dockerfile
+│   ├── app.js
 │   ├── controllers/
-│   ├── middleware/
+│   ├── middlewares/
 │   ├── routes/
 │   ├── models/
-│   ├── config/
-│   └── utils/
+│   ├── services/
+│   └── config/
 │
 └── README.md
 ```
 
 ---
 
-## Installation
+## Running with Docker
+
+```bash
+docker-compose up --build
+```
+
+This starts the client, server, and Redis containers together.
+
+> To use Gemma locally inside Docker, ensure Ollama is running on your host machine and set `OLLAMA_BASE_URL=http://host.docker.internal:11434` in your server `.env`.
+
+---
+
+## Running Locally (without Docker)
 
 ### Clone Repository
 
 ```bash
-git clone https://github.com/your-username/layerzero.git
-
+git clone https://github.com/render-TheVoid/layerzero.git
 cd layerzero
-```
-
-### Install Frontend Dependencies
-
-```bash
-cd client
-npm install
 ```
 
 ### Install Backend Dependencies
@@ -350,18 +376,23 @@ cd server
 npm install
 ```
 
+### Install Frontend Dependencies
+
+```bash
+cd client
+npm install
+```
+
 ### Configure Environment Variables
 
 ```env
-PORT=5000
-
-MONGO_URI=
-
+PORT=3000
+MONGODB_URI=
 JWT_SECRET=
-
 GEMINI_API_KEY=
-
-GEMMA_API_URL=
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=
+NODE_ENV=development
 ```
 
 ### Run Development Servers
@@ -400,60 +431,18 @@ Because sometimes you want the power of a cloud model, and sometimes you want yo
 
 ## Current Limitations
 
-* PDF support only
 * No document history
 * No persistent summary storage
 * Single-document processing
-
-This is intentional.
-
-The platform focuses on processing content and returning results rather than collecting enough data to start its own census bureau.
 
 ---
 
 ## Coming Soon
 
-### UI Improvements
-
-* ShadCN UI integration
-* Improved dashboard experience
-* Enhanced accessibility
-
-### Infrastructure
-
-* Docker containerization
-* Redis caching
-* API rate limiting
-
-### AI Enhancements
-
-* DOCX support
-* Multi-document summarization
+* Redis caching for repeated requests
 * Streaming responses
-* Advanced model routing
-* Better local inference management
-
----
-
-## Future Vision
-
-```text
-User Input
-     │
-     ▼
-Content Processing
-     │
-     ▼
-Model Selection
-     │
-     ▼
-AI Summary
-     │
-     ▼
-Export / Share / Save
-```
-
-The goal is to evolve LayerZero into a flexible AI content-processing platform capable of handling documents, articles, reports, and research material through a unified interface.
+* Summary history and persistence
+* Multi-document summarization
 
 ---
 
