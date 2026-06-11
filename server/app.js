@@ -17,7 +17,8 @@ app.use(cors({
         "https://thelayerzero.vercel.app",
         "https://layerzero.uchihamadara3472.workers.dev"
     ],
-    credentials: true
+    credentials: true,
+    exposedHeaders: ["set-cookie"]
 }));
 
 app.use(express.json());
