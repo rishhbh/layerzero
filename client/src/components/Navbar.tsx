@@ -40,7 +40,7 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link
                 to="/register"
-                className="text-sm font-bold bg-linear-to-r from-black/2 via-primary to-black/10 text-background hover:bg-primary-hover p-2 px-3 rounded-md transition-colors"
+                className="text-sm font-bold bg-linear-to-r bg-primary p-2 px-3 rounded-md transition-colors text-black"
               >
                 Let's Go
               </Link>
