@@ -13,11 +13,11 @@ export const Navbar: React.FC = () => {
           <Layers className="h-6 w-6" />
           <span className="font-bold text-xl tracking-tight text-foreground">LayerZero</span>
         </Link>
-        <div className="flex items-center space-x-16">
-          <Link to="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+        <div className="flex items-center sm:space-x-16 xs:space-x-2">
+          <Link to="/about" className="text-sm hidden md:block font-medium text-muted-foreground hover:text-foreground transition-colors">
             About
           </Link>
-          <a href="https://github.com/render-thevoid" target="_blank" rel="noreferrer" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <a href="https://github.com/render-thevoid" target="_blank" rel="noreferrer" className="text-sm hidden md:block font-medium text-muted-foreground hover:text-foreground transition-colors">
             GitHub
           </a>
           {user ? (
@@ -35,14 +35,14 @@ export const Navbar: React.FC = () => {
             </>
           ) : (
             <>
-              <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/login" className="text-sm font-medium text-muted-foreground hidden md:block hover:text-foreground transition-colors">
                 Login
               </Link>
               <Link
                 to="/register"
-                className="text-sm font-medium bg-primary text-background hover:bg-primary-hover px-4 py-2 rounded-md transition-colors"
+                className="text-sm font-bold bg-linear-to-r from-black/2 via-primary to-black/10 text-background hover:bg-primary-hover p-2 px-3 rounded-md transition-colors"
               >
-                Get Started
+                Let's Go
               </Link>
             </>
           )}
