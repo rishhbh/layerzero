@@ -7,7 +7,12 @@ import rateLimiter from '../middlewares/llmRateLimit.js';
 
 const router = express.Router();
 
-router.post('/web', rateLimiter, protectRoute, scrapePage);
+router.post(
+    '/web', 
+    rateLimiter, 
+    protectRoute, 
+    scrapePage
+);
 router.post(
     '/doc', 
     rateLimiter,
