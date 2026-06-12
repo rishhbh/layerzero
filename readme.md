@@ -92,6 +92,10 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 * Redis-ready architecture for caching
 * Local Ollama support via `host.docker.internal`
 
+### Export
+* PDF export of generated summaries via jsPDF
+* Markdown-to-plain-text conversion before export for clean output
+
 ---
 
 ## Architecture
