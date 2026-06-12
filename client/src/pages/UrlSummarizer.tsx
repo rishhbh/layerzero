@@ -13,6 +13,9 @@ import { EmptyState } from '../components/EmptyState';
 import api from '../lib/api';
 import { toast } from 'sonner';
 import { Loader2, Globe } from 'lucide-react';
+import jsPDF from 'jspdf';
+import { marked } from 'marked';
+import { Download } from 'lucide-react';
 
 const urlSchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL" }),
@@ -38,10 +41,10 @@ const UrlSummarizer: React.FC = () => {
     try {
       // Using api.post directly with the payload object
       const res = await api.post('/scrape/web', {
-        url: data.url, 
-        client: data.client 
+        url: data.url,
+        client: data.client
       });
-      
+
       // Ensure summary is always a string to prevent React crashes
       const summaryContent = res.data.output || res.data.summary || res.data.content || res.data;
       setSummary(typeof summaryContent === 'string' ? summaryContent : JSON.stringify(summaryContent, null, 2));
@@ -50,6 +53,20 @@ const UrlSummarizer: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const downloadSummary = async (summary: string) => {
+    // strip markdown to plain text
+    const html = await marked(summary);
+    const plain = html
+      .replace(/<[^>]*>/g, '')     // remove HTML tags
+      .replace(/\n{3,}/g, '\n\n'); // clean extra newlines
+
+    const doc = new jsPDF();
+    doc.setFontSize(12);
+    const lines = doc.splitTextToSize(plain, 180);
+    doc.text(lines, 15, 20);
+    doc.save('layerzero-summary.pdf');
   };
 
   return (
@@ -72,7 +89,7 @@ const UrlSummarizer: React.FC = () => {
               />
               {errors.url && <p className="text-sm text-red-500">{errors.url.message}</p>}
             </div>
-            
+
             <ModelSelector
               value={watch('client')}
               onChange={(val) => setValue('client', val)}
@@ -89,7 +106,10 @@ const UrlSummarizer: React.FC = () => {
       </Card>
 
       <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4">Response</h2>
+        <div className='flex flex-row justify-between items-center mb-4'>
+          <h2 className="text-xl font-bold">Response</h2>
+          <Button className='rounded-lg px-3 py-2 font-medium cursor-pointer bg-primary text-black flex gap-2' onClick={() => summary && downloadSummary(summary)}><Download size={20}></Download>Export</Button>
+        </div>
         <Card>
           <CardContent className="pt-6">
             {isLoading ? (
