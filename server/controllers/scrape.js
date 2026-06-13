@@ -3,13 +3,15 @@ import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import geminiClient from "../config/geminiClient.js";
 import gemmaClient from "../config/gemmaClient.js";
+import cerebrasClient from "../config/cerebrasClient.js";
 
 const scrapePage = async (req, res, next) => {
     const { url } = req.body;
     const { client } = req.body;
     const models = {
         gemma: gemmaClient,
-        gemini: geminiClient
+        gemini: geminiClient,
+        cerebras: cerebrasClient
     };
     try {
         const model = models[client];
