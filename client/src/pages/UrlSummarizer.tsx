@@ -31,7 +31,7 @@ const UrlSummarizer: React.FC = () => {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<UrlFormValues>({
     resolver: zodResolver(urlSchema),
     defaultValues: {
-      client: 'gemini'
+      client: 'cerebras'
     }
   });
 

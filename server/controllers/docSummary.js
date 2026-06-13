@@ -1,12 +1,14 @@
 import gemmaClient from "../config/gemmaClient.js";
 import geminiClient from "../config/geminiClient.js";
+import cerebrasClient from "../config/cerebrasClient.js";
 import extractText from "../services/document.js";
 
 const summariseDoc = async (req, res, next) => {
     const { client } = req.body;
     const models = {
         gemma: gemmaClient,
-        gemini: geminiClient
+        gemini: geminiClient,
+        cerebras: cerebrasClient
     };
 
     const model = models[client];
