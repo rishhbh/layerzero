@@ -2,7 +2,7 @@
 
 AI-powered content summarization platform built with React, Express.js, MongoDB, and a hybrid LLM architecture.
 
-LayerZero allows users to summarize PDFs, DOCX files, and web content using either cloud-based or locally hosted language models. The platform focuses on simplicity, speed, and flexibility while providing a secure authentication layer and a clean content-processing pipeline.
+LayerZero allows users to summarize PDFs, DOCX files, and web content using cloud-based or locally hosted language models. The platform focuses on simplicity, speed, and flexibility while providing a secure authentication layer and a clean content-processing pipeline.
 
 ---
 
@@ -14,8 +14,9 @@ LayerZero takes a different approach.
 
 Users can choose between:
 
-* **Gemini** for powerful cloud-based inference
-* **Gemma 4** for local inference and privacy-focused workflows
+* **Gemini 2.5 Flash** for powerful cloud-based inference
+* **GPT OSS 120B via Cerebras** for fast, open-source cloud inference
+* **Gemma 4 via Ollama** for local inference and privacy-focused workflows
 
 Whether you're summarizing a research paper, technical documentation, blog post, or an article you definitely intended to read later, LayerZero extracts the content and generates concise summaries within seconds.
 
@@ -71,9 +72,10 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 
 ### AI-Powered Summarization
 
-* Gemini integration
+* Gemini 2.5 Flash integration
+* GPT OSS 120B integration via Cerebras
 * Gemma 4 integration via Ollama
-* User-selectable AI models
+* Three user-selectable AI models
 * Hybrid cloud/local architecture
 * Flexible inference workflows
 
@@ -93,6 +95,7 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 * Local Ollama support via `host.docker.internal`
 
 ### Export
+
 * PDF export of generated summaries via jsPDF
 * Markdown-to-plain-text conversion before export for clean output
 
@@ -117,17 +120,17 @@ Whether you're summarizing a research paper, technical documentation, blog post,
          │
          ▼
 ┌─────────────────┐
-│ Model Selection │
+│  Model Selection  │
 └────────┬────────┘
-         │
-   ┌─────┴─────┐
-   ▼           ▼
- Gemini      Gemma 4
- Cloud       Local
-   │           │
-   └─────┬─────┘
+          │
+   ┌─────┼─────┐
+   ▼     ▼      ▼
+Gemini  GPT   Gemma 4
+Cloud   OSS    Local
+   │     │      │
+   └─────┴─────┘
          ▼
-    Summary
+      Summary
 ```
 
 ---
@@ -162,6 +165,7 @@ Summary
 * JSDOM
 * Mozilla Readability
 * Gemini API
+* Cerebras API
 * Gemma 4
 
 ---
@@ -199,6 +203,7 @@ pdf-parse mammoth
 * pdf-parse
 * mammoth
 * Gemini API
+* Cerebras API
 * Gemma 4
 
 ---
@@ -211,6 +216,7 @@ pdf-parse mammoth
 * TypeScript
 * Tailwind CSS
 * shadcn/ui
+* jsPDF
 
 ### Backend
 
@@ -245,6 +251,7 @@ pdf-parse mammoth
 ### AI Models
 
 * Gemini 2.5 Flash
+* GPT OSS 120B (via Cerebras)
 * Gemma 4 (via Ollama)
 
 ---
@@ -298,6 +305,8 @@ Request Body
 }
 ```
 
+`client` accepts `gemini`, `cerebras`, or `gemma`.
+
 ---
 
 #### Document Summarization (PDF / DOCX)
@@ -316,7 +325,7 @@ Fields
 
 ```text
 document: file.pdf or file.docx
-client: gemini or gemma
+client: gemini or cerebras or gemma
 ```
 
 ---
@@ -394,6 +403,7 @@ PORT=3000
 MONGODB_URI=
 JWT_SECRET=
 GEMINI_API_KEY=
+CEREBRAS_API_KEY=
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=
 NODE_ENV=development
@@ -425,9 +435,9 @@ Benefits include:
 
 * Reduced API dependency
 * Local AI execution
-* Flexible model selection
-* Improved privacy
-* Hybrid inference workflows
+* Three selectable AI models
+* Improved privacy via local inference
+* Hybrid cloud/local architecture
 
 Because sometimes you want the power of a cloud model, and sometimes you want your laptop to suffer instead.
 
