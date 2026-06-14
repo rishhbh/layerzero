@@ -102,6 +102,12 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 * PDF export of generated summaries via jsPDF
 * Markdown-to-plain-text conversion before export for clean output
 
+### Multilingual Support
+
+LayerZero includes Sarvam 30B support for Hinglish and multilingual interactions.
+
+This enables more natural summarization and conversational workflows for users who frequently switch between English and Indian languages, while maintaining the same unified processing pipeline used across all supported models.
+
 ---
 
 ## Architecture
@@ -257,12 +263,6 @@ pdf-parse mammoth
 * GPT OSS 120B (via Cerebras)
 * Gemma 4 (via Ollama)
 * Sarvam 30B
-
-### Multilingual Support
-
-LayerZero includes Sarvam 30B support for Hinglish and multilingual interactions.
-
-This enables more natural summarization and conversational workflows for users who frequently switch between English and Indian languages, while maintaining the same unified processing pipeline used across all supported models.
 
 ---
 
