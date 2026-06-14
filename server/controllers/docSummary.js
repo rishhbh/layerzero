@@ -1,6 +1,6 @@
-import gemmaClient from "../config/gemmaClient.js";
-import geminiClient from "../config/geminiClient.js";
-import cerebrasClient from "../config/cerebrasClient.js";
+import gemmaClient from "../config/llm/gemmaClient.js";
+import geminiClient from "../config/llm/geminiClient.js";
+import cerebrasClient from "../config/llm/cerebrasClient.js";
 import extractText from "../services/document.js";
 
 const summariseDoc = async (req, res, next) => {

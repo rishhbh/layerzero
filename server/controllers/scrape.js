@@ -1,9 +1,9 @@
 import axios from "axios";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
-import geminiClient from "../config/geminiClient.js";
-import gemmaClient from "../config/gemmaClient.js";
-import cerebrasClient from "../config/cerebrasClient.js";
+import geminiClient from "../config/llm/geminiClient.js";
+import gemmaClient from "../config/llm/gemmaClient.js";
+import cerebrasClient from "../config/llm/cerebrasClient.js";
 
 const scrapePage = async (req, res, next) => {
     const { url } = req.body;
