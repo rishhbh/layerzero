@@ -1,4 +1,4 @@
-import systemPrompt from "./systemPrompt.js";
+import systemPrompt from "../systemPrompt.js";
 
 const gemmaClient = async (prompt) => {
     try {
