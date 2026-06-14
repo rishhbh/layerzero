@@ -16,7 +16,8 @@ Users can choose between:
 
 * **Gemini 2.5 Flash** for powerful cloud-based inference
 * **GPT OSS 120B via Cerebras** for fast, open-source cloud inference
-* **Gemma 4 via Ollama** for local inference and privacy-focused workflows
+* **Gemma 4 via Ollama** for local inference and privacy-focused workflows* 
+* **Sarvam 30B** for Hinglish and multilingual conversational workflows*
 
 Whether you're summarizing a research paper, technical documentation, blog post, or an article you definitely intended to read later, LayerZero extracts the content and generates concise summaries within seconds.
 
@@ -75,9 +76,11 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 * Gemini 2.5 Flash integration
 * GPT OSS 120B integration via Cerebras
 * Gemma 4 integration via Ollama
-* Three user-selectable AI models
+* Sarvam 30B integration
+* Four user-selectable AI models
 * Hybrid cloud/local architecture
 * Flexible inference workflows
+* Hinglish-friendly and multilingual support via Sarvam
 
 ### Authentication & Security
 
@@ -123,12 +126,12 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 │  Model Selection  │
 └────────┬────────┘
           │
-   ┌─────┼─────┐
-   ▼     ▼      ▼
-Gemini  GPT   Gemma 4
-Cloud   OSS    Local
-   │     │      │
-   └─────┴─────┘
+   ┌─────┼─────┬──────┐
+   ▼     ▼     ▼       ▼
+Gemini  GPT  Gemma   Sarvam
+Cloud   OSS   Local  Cloud
+   │     │      │      │
+   └─────┴──────┴─────┘
          ▼
       Summary
 ```
@@ -253,6 +256,13 @@ pdf-parse mammoth
 * Gemini 2.5 Flash
 * GPT OSS 120B (via Cerebras)
 * Gemma 4 (via Ollama)
+* Sarvam 30B
+
+### Multilingual Support
+
+LayerZero includes Sarvam 30B support for Hinglish and multilingual interactions.
+
+This enables more natural summarization and conversational workflows for users who frequently switch between English and Indian languages, while maintaining the same unified processing pipeline used across all supported models.
 
 ---
 
@@ -305,7 +315,12 @@ Request Body
 }
 ```
 
-`client` accepts `gemini`, `cerebras`, or `gemma`.
+`client` accepts:
+
+* `gemini`
+* `cerebras`
+* `gemma`
+* `sarvam`
 
 ---
 
@@ -325,7 +340,7 @@ Fields
 
 ```text
 document: file.pdf or file.docx
-client: gemini or cerebras or gemma
+client: gemini or cerebras or gemma or sarvam
 ```
 
 ---
