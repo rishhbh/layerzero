@@ -4,6 +4,7 @@ import { Readability } from "@mozilla/readability";
 import geminiClient from "../config/llm/geminiClient.js";
 import gemmaClient from "../config/llm/gemmaClient.js";
 import cerebrasClient from "../config/llm/cerebrasClient.js";
+import sarvamClient from "../config/llm/sarvamClient.js";
 
 const scrapePage = async (req, res, next) => {
     const { url } = req.body;
@@ -11,7 +12,8 @@ const scrapePage = async (req, res, next) => {
     const models = {
         gemma: gemmaClient,
         gemini: geminiClient,
-        cerebras: cerebrasClient
+        cerebras: cerebrasClient,
+        sarvam: sarvamClient
     };
     try {
         const model = models[client];

@@ -2,13 +2,15 @@ import gemmaClient from "../config/llm/gemmaClient.js";
 import geminiClient from "../config/llm/geminiClient.js";
 import cerebrasClient from "../config/llm/cerebrasClient.js";
 import extractText from "../services/document.js";
+import sarvamClient from "../config/llm/sarvamClient.js";
 
 const summariseDoc = async (req, res, next) => {
     const { client } = req.body;
     const models = {
         gemma: gemmaClient,
         gemini: geminiClient,
-        cerebras: cerebrasClient
+        cerebras: cerebrasClient,
+        sarvam: sarvamClient
     };
 
     const model = models[client];
