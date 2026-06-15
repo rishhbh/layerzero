@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import connectWithDB from './config/db.js';
 import authRoute from './routes/authRoute.js'
-import ingestRoute from './routes/ingestRoute.js' 
+import ingestRoute from './routes/ingestRoute.js'
 import handleError from './middlewares/errorHandler.js';
 import cookieParser from 'cookie-parser';
 
@@ -13,9 +13,9 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 app.use(cors({
     origin: [
-        "http://localhost:5173",
-        "https://thelayerzero.vercel.app",
-        "https://layerzero.uchihamadara3472.workers.dev"
+        process.env.NODE_ENV === 'development' 
+        ? ['http://localhost:5173'] 
+        : [process.env.CLIENT_URL],
     ],
     credentials: true,
     exposedHeaders: ["set-cookie"]
