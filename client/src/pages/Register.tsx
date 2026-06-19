@@ -42,10 +42,10 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex-1 flex items-center justify-center p-4 animate-blur-fade-in">
+      <Card className="w-full max-w-md rounded-none">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create an account</CardTitle>
+          <CardTitle className="text-2xl font-heading">Create an account</CardTitle>
           <CardDescription>Enter your details to get started with LayerZero</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -57,8 +57,13 @@ const Register: React.FC = () => {
                 placeholder="John Doe"
                 {...register('name')}
                 disabled={isLoading}
+                className="rounded-none"
               />
-              {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+              {errors.name && (
+                <p className="text-sm text-foreground/90 font-medium pl-2 border-l border-foreground mt-1">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -68,8 +73,13 @@ const Register: React.FC = () => {
                 placeholder="developer@layerzero.ai"
                 {...register('email')}
                 disabled={isLoading}
+                className="rounded-none"
               />
-              {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+              {errors.email && (
+                <p className="text-sm text-foreground/90 font-medium pl-2 border-l border-foreground mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -78,12 +88,17 @@ const Register: React.FC = () => {
                 type="password"
                 {...register('password')}
                 disabled={isLoading}
+                className="rounded-none"
               />
-              {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+              {errors.password && (
+                <p className="text-sm text-foreground/90 font-medium pl-2 border-l border-foreground mt-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full rounded-none" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Account
             </Button>

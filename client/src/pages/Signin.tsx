@@ -2,8 +2,8 @@ import React from 'react'
 
 const Signin: React.FC = () => {
     return (
-        <div className='flex justify-center items-center h-screen'>
-            <h1 className='font-bold text-6xl text-white/90'>Sign In</h1>
+        <div className='flex justify-center items-center h-screen animate-blur-fade-in'>
+            <h1 className='font-heading font-bold text-6xl text-foreground'>Sign In</h1>
         </div>
     );
 };

@@ -3,32 +3,42 @@
 
 @theme {
   --font-sans: "Inter", sans-serif;
+  --font-heading: "Space Grotesk", sans-serif;
   --font-mono: "Geist Mono", monospace;
-  
-  --color-primary: #10b981;
-  --color-primary-hover: #059669;
-  
-  --color-background: #09090b;
+
+  --color-background: #0a0a0a;
   --color-foreground: #fafafa;
-  
-  --color-card: #18181b;
+
+  --color-card: #141414;
   --color-card-foreground: #fafafa;
-  
-  --color-popover: #18181b;
+
+  --color-popover: #141414;
   --color-popover-foreground: #fafafa;
+
+  --color-border: #2a2a2a;
+  --color-input: #2a2a2a;
+  --color-ring: #fafafa;
+
+  --color-muted: #1f1f1f;
+  --color-muted-foreground: #8a8a8a;
+
+  --color-primary: #fafafa;
+  --color-primary-foreground: #0a0a0a;
+
+  --color-secondary: #1f1f1f;
+  --color-secondary-foreground: #fafafa;
+
+  --color-destructive: #e5e5e5;
+  --color-destructive-foreground: #0a0a0a;
   
-  --color-border: #27272a;
-  --color-input: #27272a;
-  --color-ring: #10b981;
-  
-  --color-muted: #27272a;
-  --color-muted-foreground: #a1a1aa;
+  --radius: 0px;
 }
 
 @layer base {
   :root {
-    --background: #09090b;
+    --background: #0a0a0a;
     --foreground: #fafafa;
+    --radius: 0px;
   }
 
   body {
@@ -36,9 +46,13 @@
     color: var(--foreground);
     font-family: var(--font-sans);
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
 }
 
-/* Scrollbar styling for a cleaner look */
+/* Webkit scrollbar styling with sharp corners */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -47,9 +61,112 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
-  border-radius: 4px;
+  background: #2a2a2a;
+  border-radius: 0px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #1f1f1f;
+}
+
+/* Glassmorphism Styles */
+.glass-surface {
+  background: rgba(20, 20, 20, 0.5) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Hyperactive transitions */
+.interactive-item {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), 
+              background-color 0.15s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.interactive-item:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
+}
+.interactive-item:active {
+  transform: scale(0.97);
+}
+
+.interactive-item-large {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), 
+              background-color 0.15s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.interactive-item-large:hover {
+  transform: scale(1.015);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
+}
+.interactive-item-large:active {
+  transform: scale(0.985);
+}
+
+/* Spotlight Cursor Shine */
+.spotlight-card {
+  position: relative;
+  overflow: hidden;
+}
+.spotlight-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle 200px at var(--x, 50%) var(--y, 50%), rgba(255, 255, 255, 0.07), transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 1;
+}
+.spotlight-card:hover::after {
+  opacity: 1;
+}
+
+/* Micro-interactions at rest */
+@keyframes slowPulse {
+  0%, 100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+.animate-slow-pulse {
+  animation: slowPulse 3.5s infinite ease-in-out;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0);
+  }
+  50% {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.04);
+  }
+}
+.animate-badge-pulse {
+  animation: badgePulse 3s infinite ease-in-out;
+}
+
+/* Scroll Reveal */
+.scroll-reveal {
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateY(12px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
+              filter 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-reveal.is-visible {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+}
+
+/* Typography styles for Markdown */
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+  font-family: var(--font-heading) !important;
 }

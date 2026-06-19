@@ -39,13 +39,11 @@ const UrlSummarizer: React.FC = () => {
     setIsLoading(true);
     setSummary(null);
     try {
-      // Using api.post directly with the payload object
       const res = await api.post('/scrape/web', {
         url: data.url,
         client: data.client
       });
 
-      // Ensure summary is always a string to prevent React crashes
       const summaryContent = res.data.output || res.data.summary || res.data.content || res.data;
       setSummary(typeof summaryContent === 'string' ? summaryContent : JSON.stringify(summaryContent, null, 2));
     } catch (error: any) {
@@ -56,11 +54,10 @@ const UrlSummarizer: React.FC = () => {
   };
 
   const downloadSummary = async (summary: string) => {
-    // strip markdown to plain text
     const html = await marked(summary);
     const plain = html
-      .replace(/<[^>]*>/g, '')     // remove HTML tags
-      .replace(/\n{3,}/g, '\n\n'); // clean extra newlines
+      .replace(/<[^>]*>/g, '')
+      .replace(/\n{3,}/g, '\n\n');
 
     const doc = new jsPDF();
     doc.setFontSize(12);
@@ -70,13 +67,13 @@ const UrlSummarizer: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-blur-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-2">URL Summarizer</h1>
+        <h1 className="text-3xl font-heading font-bold tracking-tight mb-2">URL Summarizer</h1>
         <p className="text-muted-foreground">Extract and summarize content from any web page.</p>
       </div>
 
-      <Card>
+      <Card className="rounded-none">
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
@@ -86,8 +83,13 @@ const UrlSummarizer: React.FC = () => {
                 placeholder="https://example.com/article"
                 {...register('url')}
                 disabled={isLoading}
+                className="rounded-none"
               />
-              {errors.url && <p className="text-sm text-red-500">{errors.url.message}</p>}
+              {errors.url && (
+                <p className="text-sm text-foreground/90 font-medium pl-2 border-l border-foreground mt-1">
+                  {errors.url.message}
+                </p>
+              )}
             </div>
 
             <ModelSelector
@@ -95,9 +97,13 @@ const UrlSummarizer: React.FC = () => {
               onChange={(val) => setValue('client', val)}
               disabled={isLoading}
             />
-            {errors.client && <p className="text-sm text-red-500">{errors.client.message}</p>}
+            {errors.client && (
+              <p className="text-sm text-foreground/90 font-medium pl-2 border-l border-foreground mt-1">
+                {errors.client.message}
+              </p>
+            )}
 
-            <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
+            <Button type="submit" disabled={isLoading} className="w-full md:w-auto rounded-none">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate Summary
             </Button>
@@ -107,10 +113,15 @@ const UrlSummarizer: React.FC = () => {
 
       <div className="mt-8">
         <div className='flex flex-row justify-between items-center mb-4'>
-          <h2 className="text-xl font-bold">Response</h2>
-          <Button className='rounded-lg px-3 py-2 font-medium cursor-pointer bg-primary text-black flex gap-2' onClick={() => summary && downloadSummary(summary)}><Download size={20}></Download>Export</Button>
+          <h2 className="text-xl font-heading font-bold">Response</h2>
+          <Button 
+            className='rounded-none px-3 py-2 font-heading font-medium cursor-pointer bg-primary text-primary-foreground flex gap-2 hover:opacity-90 transition-opacity' 
+            onClick={() => summary && downloadSummary(summary)}
+          >
+            <Download size={20} />Export
+          </Button>
         </div>
-        <Card>
+        <Card className="rounded-none">
           <CardContent className="pt-6">
             {isLoading ? (
               <LoadingSkeleton rows={5} />

@@ -1,9 +1,10 @@
+console.log("SERVER FILE LOADED");
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import connectWithDB from './config/db.js';
-import authRoute from './routes/authRoute.js'
-import ingestRoute from './routes/ingestRoute.js'
+import authRoute from './routes/authRoute.js';
+import ingestRoute from './routes/ingestRoute.js';
 import handleError from './middlewares/errorHandler.js';
 import cookieParser from 'cookie-parser';
 
@@ -26,7 +27,6 @@ app.use(cookieParser());
 app.use('/api/auth', authRoute);
 app.use('/api/scrape', ingestRoute);
 app.use(handleError);
-
 
 app.get('/', (req, res) => {
     res.json({

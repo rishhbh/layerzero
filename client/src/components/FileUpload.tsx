@@ -43,8 +43,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, accept = "
   return (
     <div
       className={cn(
-        "relative border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer",
-        isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-accent/50",
+        "relative border-2 border-dashed rounded-none p-8 text-center transition-colors cursor-pointer",
+        isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50",
         className
       )}
       onDragOver={handleDragOver}
@@ -61,7 +61,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, accept = "
       />
       
       <div className="flex flex-col items-center justify-center space-y-4">
-        <div className={cn("p-4 rounded-full", selectedFile ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground")}>
+        <div className={cn("p-4 rounded-none", selectedFile ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground")}>
           {selectedFile ? <File className="w-8 h-8" /> : <Upload className="w-8 h-8" />}
         </div>
         <div>

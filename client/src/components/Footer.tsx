@@ -8,7 +8,7 @@ export const Footer: React.FC = () => {
       <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
         <div className="flex items-center space-x-2 text-primary">
           <Layers className="h-5 w-5" />
-          <span className="font-semibold tracking-tight text-foreground">LayerZero</span>
+          <span className="font-heading font-semibold tracking-tight text-foreground">LayerZero</span>
         </div>
         <div className="flex space-x-6 text-sm text-muted-foreground">
           <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
