@@ -1,4 +1,3 @@
-console.log("SERVER FILE LOADED");
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
