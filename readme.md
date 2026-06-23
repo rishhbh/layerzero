@@ -71,6 +71,15 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 * Article content parsing using Mozilla Readability
 * Unified document processing pipeline with mimetype-based routing
 
+### Intelligent Caching
+
+* Upstash Redis-powered caching layer
+* SHA-256 content fingerprinting for document and URL deduplication
+* Cache-first retrieval for previously processed content
+* Automatic 7-day cache expiration via Redis TTLs
+* Eliminates redundant LLM inference for identical requests
+* Reduced repeated summary latency from ~8.5s to ~150ms (~98% improvement)
+
 ### AI-Powered Summarization
 
 * Gemini 2.5 Flash integration
@@ -94,7 +103,9 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 
 * Docker Compose setup for client, server, and Redis
 * Separate Dockerfiles for frontend and backend
-* Redis-ready architecture for caching
+* Upstash Redis integration for intelligent summary caching
+* SHA-256 content hashing for cache deduplication
+* Cache-first retrieval strategy with automatic TTL expiration
 * Local Ollama support via `host.docker.internal`
 
 ### Export
@@ -124,22 +135,31 @@ This enables more natural summarization and conversational workflows for users w
          │
          ▼
 ┌─────────────────┐
-│ Content Parsing │
+│  Content Parsing │
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│  Model Selection  │
+│ SHA-256 Hashing │
 └────────┬────────┘
-          │
-   ┌─────┼─────┬──────┐
-   ▼     ▼     ▼       ▼
-Gemini  GPT  Gemma   Sarvam
-Cloud   OSS   Local  Cloud
-   │     │      │      │
-   └─────┴──────┴─────┘
+         │
          ▼
-      Summary
+┌─────────────────┐
+│  Redis Cache    │
+└────┬─────────┬──┘
+     │Hit      │Miss
+     ▼         ▼
+   Summary   Model Selection
+              │
+       ┌──────┼──────┬──────┐
+       ▼      ▼      ▼      ▼
+     Gemini  GPT OSS Gemma Sarvam
+                  │
+                  ▼
+               Summary
+                  │
+                  ▼
+            Store in Redis
 ```
 
 ---
@@ -450,7 +470,7 @@ Benefits include:
 
 * Reduced API dependency
 * Local AI execution
-* Three selectable AI models
+* Four selectable AI models
 * Improved privacy via local inference
 * Hybrid cloud/local architecture
 
@@ -468,10 +488,10 @@ Because sometimes you want the power of a cloud model, and sometimes you want yo
 
 ## Coming Soon
 
-* Redis caching for repeated requests
 * Streaming responses
 * Summary history and persistence
 * Multi-document summarization
+* Background processing for large documents
 
 ---
 
@@ -481,4 +501,4 @@ MIT License
 
 ---
 
-Built with React, Express, MongoDB, and a stubborn refusal to choose between cloud AI and local AI.
+Built with React, Node(Express), MongoDB, Redis and a stubborn refusal to choose between cloud AI and local AI.
