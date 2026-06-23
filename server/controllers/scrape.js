@@ -52,7 +52,7 @@ const scrapePage = async (req, res, next) => {
     }
     const summary = await model(article.textContent);
     await redis.set(cacheKey, summary, {
-      ex: 7*24*60*60 // 7 Days
+      ex: 7*24*60*60 // cached for 7 days
     });
     
     res.json({
