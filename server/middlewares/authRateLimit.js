@@ -2,7 +2,7 @@ import { rateLimit } from 'express-rate-limit'
 
 const rateLimiter = rateLimit({
 	windowMs: 10 * 60 * 1000, // 10 minutes
-	limit: 5, // 5 requests per 10 min
+	limit: 20, // 5 requests per 10 min
 	standardHeaders: 'draft-8',
 	legacyHeaders: false,
 	ipv6Subnet: 56,
