@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import CustomCursor from './components/CustomCursor';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext';
 import { MainLayout } from './layouts/MainLayout';
@@ -16,6 +17,7 @@ import DocSummarizer from './pages/DocSummarizer';
 function App() {
   return (
     <AuthProvider>
+      <CustomCursor />
       <BrowserRouter>
         <Routes>
           <Route element={<MainLayout />}>
