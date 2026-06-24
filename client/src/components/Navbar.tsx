@@ -17,7 +17,7 @@ export const Navbar: React.FC = () => {
           <Link to="/about" className="text-sm hidden md:block font-medium text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 ease-out">
             About
           </Link>
-          <a href="https://github.com/render-thevoid" target="_blank" rel="noreferrer" className="text-sm hidden md:block font-medium text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 ease-out">
+          <a href="https://github.com/rishhbh" target="_blank" rel="noreferrer" className="text-sm hidden md:block font-medium text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 ease-out">
             GitHub
           </a>
           {user ? (

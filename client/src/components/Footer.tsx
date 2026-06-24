@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
           <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
           <Link to="/login" className="hover:text-foreground transition-colors">Login</Link>
           <Link to="/register" className="hover:text-foreground transition-colors">Register</Link>
-          <a href="https://github.com/render-thevoid" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
+          <a href="https://github.com/rishhbh" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
         </div>
         <div className="text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} LayerZero. All rights reserved.
