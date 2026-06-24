@@ -1,6 +1,6 @@
 # LayerZero — Backend
 
-Express.js + MongoDB backend for LayerZero. Handles JWT auth, multi-format content ingestion (PDF, URL), and hybrid AI summarization routing between Gemini (cloud) and Gemma via Ollama (local).
+Express.js + MongoDB backend for LayerZero. Handles JWT auth, multi-format content ingestion (PDF, DOCX, URL), and hybrid AI summarization routing between Gemini, Cerebras, Sarvam AI, and Gemma via Ollama. Redis caching and rate limiting are implemented using Upstash.
 
 ---
 
@@ -11,10 +11,11 @@ Express.js + MongoDB backend for LayerZero. Handles JWT auth, multi-format conte
 | Runtime | Node.js (ESM) |
 | Framework | Express.js v5 |
 | Database | MongoDB via Mongoose |
+| Caching & Rate Limit | Redis via Upstash (`@upstash/redis`) |
 | Auth | JWT in httpOnly cookies |
-| AI — Cloud | Gemini 2.5 Flash (`@google/genai`) |
+| AI — Cloud | Gemini (`@google/genai`), Cerebras (`@cerebras/cerebras_cloud_sdk`), Sarvam (`sarvamai`) |
 | AI — Local | Gemma via Ollama (`/api/chat`) |
-| File Parsing | `pdf-parse`, `multer` (memory storage) |
+| File Parsing | `pdf-parse`, `mammoth` (for DOCX), `multer` (memory storage) |
 | Web Scraping | `axios` + `jsdom` + `@mozilla/readability` |
 
 ---
@@ -26,23 +27,32 @@ server/
 ├── app.js                  # Entry point, middleware stack, route mounting
 ├── config/
 │   ├── db.js               # MongoDB connection
-│   ├── geminiClient.js     # Gemini API wrapper
-│   ├── gemmaClient.js      # Ollama/Gemma API wrapper
-│   ├── multer.js           # Multer config (memory storage, 5MB limit)
+│   ├── docxparse.js        # DOCX buffer → text extractor
+│   ├── llm/                # AI Client wrappers (Cerebras, Gemini, Gemma, Sarvam)
 │   ├── pdfparse.js         # PDF buffer → text extractor
+│   ├── sarvamSystemPrompt.js # Specialized system prompt for Sarvam AI
+│   ├── systemPrompt.js     # Default system prompt for other models
 │   └── utils.js            # JWT generation utility
 ├── controllers/
 │   ├── auth.js             # register, login, logout, checkUser
-│   ├── pdfsummary.js       # PDF upload → parse → summarize
-│   └── scrape.js           # URL → scrape → summarize
+│   ├── docSummary.js       # Document upload (PDF/DOCX) → parse → summarize (with Redis caching)
+│   └── scrape.js           # URL → scrape → summarize (with Redis caching)
 ├── middlewares/
 │   ├── authMiddleware.js   # protectRoute (JWT verification)
-│   └── errorHandler.js     # Global error handler
+│   ├── authRateLimit.js    # Rate limiting for auth routes (Upstash Redis)
+│   ├── errorHandler.js     # Global error handler
+│   └── llmRateLimit.js     # Rate limiting for LLM/Ingestion routes
 ├── models/
 │   └── User.js             # Mongoose user schema
-└── routes/
-    ├── authRoute.js        # /api/auth/*
-    └── ingestRoute.js      # /api/scrape/*
+├── routes/
+│   ├── authRoute.js        # /api/auth/*
+│   └── ingestRoute.js      # /api/scrape/*
+├── services/
+│   ├── document.js         # Document handling services
+│   ├── multer.js           # Multer config (memory storage, 5MB limit)
+│   └── redis.js            # Upstash Redis client configuration
+└── utils/
+    └── hashContent.js      # Utility for generating cache keys via crypto hash
 ```
 
 ---
@@ -52,13 +62,18 @@ server/
 Copy `.env.example` to `.env` and fill in the values.
 
 ```env
-PORT=3000
+PORT=3000 # Assign whatever port you like
 MONGODB_URI=YOUR_MONGODB_URI
-JWT_SECRET=YOUR_JWT_SECRET
-GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=YOUR_OLLAMA_MODEL
-NODE_ENV=development
+OLLAMA_BASE_URL=http://localhost:11434 # Ollama runs locally at port 11434
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+CEREBRAS_API_KEY=YOUR_CEREBRAS_API_KEY
+SARVAM_API_KEY=YOUR_SARVAM_API_KEY
+JWT_SECRET=YOUR_JWT_SECRET
+NODE_ENV=development # Depends upon the environment you're working on, either development or production
+CLIENT_URL=https://layerzero.rishhbh.workers.dev
+UPSTASH_REDIS_REST_URL=YOUR_UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN=YOUR_UPSTASH_REDIS_REST_TOKEN
 ```
 
 > `OLLAMA_BASE_URL` defaults to `http://localhost:11434` — Ollama must be running locally with the specified model pulled.
@@ -66,6 +81,25 @@ NODE_ENV=development
 ---
 
 ## API Reference
+
+### Health Check
+
+---
+
+#### `GET /api/health`
+
+Returns the current health status of the API.
+
+**Response `201`**
+```json
+{
+  "status": "OK",
+  "message": "API is working properly",
+  "uptime": 123
+}
+```
+
+---
 
 ### Auth — `/api/auth`
 
@@ -156,9 +190,9 @@ All ingestion routes are protected — requires a valid `jwt` cookie.
 
 ---
 
-#### `GET /api/scrape/web`
+#### `POST /api/scrape/web`
 
-Scrapes a URL, extracts readable content via Readability, and summarizes it using the selected model.
+Scrapes a URL, extracts readable content via Readability, and summarizes it using the selected model. Results are cached in Redis.
 
 **Request body**
 ```json
@@ -168,7 +202,7 @@ Scrapes a URL, extracts readable content via Readability, and summarizes it usin
 }
 ```
 
-`client` accepts `"gemini"` or `"gemma"`.
+`client` accepts `"gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"`.
 
 **Response `200`**
 ```json
@@ -179,16 +213,16 @@ Scrapes a URL, extracts readable content via Readability, and summarizes it usin
 
 ---
 
-#### `GET /api/scrape/pdf`
+#### `POST /api/scrape/doc`
 
-Accepts a PDF file upload, extracts text, and summarizes it using the selected model.
+Accepts a Document file upload (PDF/DOCX), extracts text, and summarizes it using the selected model. Results are cached in Redis using a content hash.
 
 **Request** — `multipart/form-data`
 
 | Field | Type | Description |
 |---|---|---|
-| `file` | File | PDF file (max 5MB) |
-| `client` | string | `"gemini"` or `"gemma"` |
+| `document` | File | PDF or DOCX file (max 5MB) |
+| `client` | string | `"gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"` |
 
 **Response `200`**
 ```json
@@ -250,37 +284,43 @@ User.findById(jwtCheck.userId).select('-password')
 req.user = user → next()
 ```
 
-### PDF Summarization Flow
+### Document Summarization Flow
 
 ```
-POST /api/scrape/pdf  (multipart/form-data)
+POST /api/scrape/doc  (multipart/form-data)
   │
   ▼
-protectRoute (JWT check)
+llmRateLimit + protectRoute (JWT check)
   │
   ▼
 multer memoryStorage → req.file.buffer
   │
   ▼
-parsePdf(buffer) → raw text string (pdf-parse)
+Hash content → Check Redis cache → Return if exists
   │
   ▼
-model = models[req.body.client]  (gemini | gemma)
+Document Service → raw text string (pdf-parse / mammoth)
+  │
+  ▼
+model = models[req.body.client]  (gemini | gemma | cerebras | sarvam)
   │
   ▼
 model(text) → summary string
   │
   ▼
-res.json({ summary })
+Cache in Redis → res.json({ summary })
 ```
 
 ### URL Summarization Flow
 
 ```
-GET /api/scrape/web
+POST /api/scrape/web
   │
   ▼
-protectRoute (JWT check)
+llmRateLimit + protectRoute (JWT check)
+  │
+  ▼
+Check Redis cache for URL → Return if exists
   │
   ▼
 axios.get(url) with browser User-Agent
@@ -291,13 +331,13 @@ JSDOM + Readability → article.textContent
   ├─ Unreadable page → 400
   │
   ▼
-model = models[req.body.client]  (gemini | gemma)
+model = models[req.body.client]  (gemini | gemma | cerebras | sarvam)
   │
   ▼
 model(textContent) → summary string
   │
   ▼
-res.json({ output })
+Cache in Redis → res.json({ output })
 ```
 
 ### Error Handling Flow
@@ -316,22 +356,21 @@ handleError middleware
 
 ## AI Clients
 
-### Gemini (`config/geminiClient.js`)
+### Gemini
+Uses `@google/genai` SDK with `gemini-2.5-flash`.
 
-Uses `@google/genai` SDK with `gemini-2.5-flash`. Accepts a text prompt, returns a summary string. System prompt enforces the LayerZero sarcastic summarizer personality with layered output format (TL;DR → Quick Summary → Detailed Summary).
+### Cerebras
+Uses `@cerebras/cerebras_cloud_sdk` for fast, cloud-based inference.
 
-### Gemma (`config/gemmaClient.js`)
+### Sarvam AI
+Uses `sarvamai` SDK tailored for Indic language contexts or specialized tasks using a dedicated system prompt.
 
-Hits the local Ollama `/api/chat` endpoint via native `fetch`. Model and base URL are env-driven. Runs fully offline — no API key required. Same system prompt personality as Gemini for consistent UX across both clients.
+### Gemma
+Hits the local Ollama `/api/chat` endpoint via native `fetch`. Runs fully offline.
 
 ### Model Routing
 
-Client selection is explicit — the caller passes `client: "gemini"` or `client: "gemma"` in the request body. Both ingestion controllers use the same routing pattern:
-
-```js
-const models = { gemma: gemmaClient, gemini: geminiClient };
-const model = models[client];
-```
+Client selection is explicit — the caller passes `client: "gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"` in the request body. Both ingestion controllers use the same routing pattern to fetch the respective API wrapper from `config/llm/`.
 
 ---
 
