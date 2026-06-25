@@ -24,7 +24,7 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormValues>({
+  const { register, handleSubmit, setError, formState: { errors } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema)
   });
 
@@ -35,7 +35,17 @@ const Register: React.FC = () => {
       toast.success("Account created successfully");
       navigate('/dashboard');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to create account");
+      if (error.response?.data?.errors) {
+        const backendErrors = error.response.data.errors;
+        Object.keys(backendErrors).forEach((key) => {
+          setError(key as any, {
+            type: "server",
+            message: backendErrors[key][0],
+          });
+        });
+      } else {
+        toast.error(error.response?.data?.message || "Failed to create account");
+      }
     } finally {
       setIsLoading(false);
     }

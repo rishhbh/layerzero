@@ -23,7 +23,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
+  const { register, handleSubmit, setError, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema)
   });
 
@@ -34,7 +34,17 @@ const Login: React.FC = () => {
       toast.success("Logged in successfully");
       navigate('/dashboard');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to log in");
+      if (error.response?.data?.errors) {
+        const backendErrors = error.response.data.errors;
+        Object.keys(backendErrors).forEach((key) => {
+          setError(key as any, {
+            type: "server",
+            message: backendErrors[key][0],
+          });
+        });
+      } else {
+        toast.error(error.response?.data?.message || "Failed to log in");
+      }
     } finally {
       setIsLoading(false);
     }

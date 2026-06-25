@@ -31,7 +31,7 @@ app.use(handleError);
 
 app.get("/", (req, res) => {
   res.json({
-    message: "hello, this is layerzero's server!",
+    message: "API is running",
   });
 });
 
