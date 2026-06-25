@@ -2,15 +2,19 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { generateToken } from "../config/utils.js";
+import { registerSchema, loginSchema } from "../validators/auth.validator.js";
 
 export const registerUser = async (req, res, next) => {
-  const { name, email, password } = req.body;
   try {
-    if (!name || !email || !password) {
+    const registerFields = registerSchema.safeParse(req.body);
+
+    if (!registerFields.success) {
       return res.status(400).json({
-        message: "Please fill out all the required fields!",
+        errors: registerFields.error.flatten().fieldErrors
       });
     }
+
+    const { name, email, password } = registerFields.data;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -34,6 +38,7 @@ export const registerUser = async (req, res, next) => {
       name: newUser.name,
       email: newUser.email,
     });
+
   } catch (err) {
     err.customMessage = "Some error occured while registering the user!";
     next(err);
@@ -41,25 +46,22 @@ export const registerUser = async (req, res, next) => {
 };
 
 export const loginUser = async (req, res, next) => {
-  const { email, password } = req.body;
   try {
-    if (!email || !password) {
+    const loginFields = loginSchema.safeParse(req.body);
+
+    if (!loginFields.success) {
       return res.status(400).json({
-        message: "Please fill out the required fields!",
-      });
-    }
-    const user = await User.findOne({ email });
-    loginUser;
-    if (!user) {
-      return res.status(400).json({
-        message: "The user doesn't exist!",
+        errors: loginFields.error.flatten().fieldErrors
       });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect) {
+    const { email, password } = loginFields.data;
+
+    const user = await User.findOne({ email });
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({
-        message: "Invalid Credentials!",
+        message: "Invalid username or password",
       });
     }
 
@@ -69,8 +71,9 @@ export const loginUser = async (req, res, next) => {
       name: user.name,
       email: user.email,
     });
+
   } catch (err) {
-    err.customMessage = "Some error occurred while logging in the user!";
+    err.customMessage = "Some error occurred while logging in the user";
     next(err);
   }
 };
@@ -79,7 +82,7 @@ export const logout = async (req, res, next) => {
   try {
     res.cookie("jwt", "", { maxAge: 0 });
     res.status(200).json({
-      message: "The user has been logged out successfully!",
+      message: "The user has been logged out successfully",
     });
   } catch (err) {
     err.customMessage = "Unable to logout the user!";
@@ -91,7 +94,7 @@ export const checkUser = async (req, res, next) => {
   try {
     return res.status(200).json(req.user);
   } catch (err) {
-    err.customMessage = "Unable to check current user!";
+    err.customMessage = "Unable to check current user";
     next(err);
   }
 };
