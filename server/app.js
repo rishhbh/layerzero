@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import connectWithDB from "./config/db.js";
+import connectDatabase from "./config/db.js";
 import authRoute from "./routes/authRoute.js";
 import ingestRoute from "./routes/ingestRoute.js";
 import handleError from "./middlewares/errorHandler.js";
@@ -22,6 +22,8 @@ app.use(
     exposedHeaders: ["set-cookie"],
   }),
 );
+
+await connectDatabase();
 
 app.use(express.json());
 app.use(cookieParser());
@@ -45,5 +47,4 @@ app.get("/api/health", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`the server is currently running on: http://localhost:${PORT}`);
-  connectWithDB();
 });

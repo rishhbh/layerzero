@@ -6,14 +6,22 @@ import gemmaClient from "../config/llm/gemmaClient.js";
 import cerebrasClient from "../config/llm/cerebrasClient.js";
 import sarvamClient from "../config/llm/sarvamClient.js";
 import redis from "../services/redis.js";
+import { webSummarySchema } from "../validators/summary.validator.js";
 
 const scrapePage = async (req, res, next) => {
-  const { url } = req.body;
-  const { client } = req.body;
+  const clientFields = webSummarySchema.safeParse(req.body);
+
+  if (!clientFields.success) {
+    return res.status(400).json({
+      errors: clientFields.error.flatten().fieldErrors,
+    });
+  }
+
+  const { url, client } = clientFields.data;
 
   const cacheKey = `${client}:${url}`;
   const cachedData = await redis.get(cacheKey);
-  
+
   if (cachedData) {
     return res.json({
       output: cachedData,
@@ -52,9 +60,9 @@ const scrapePage = async (req, res, next) => {
     }
     const summary = await model(article.textContent);
     await redis.set(cacheKey, summary, {
-      ex: 7*24*60*60 // cached for 7 days
+      ex: 7 * 24 * 60 * 60 // cached for 7 days
     });
-    
+
     res.json({
       output: summary,
     });
