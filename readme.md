@@ -95,6 +95,7 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 
 * JWT Authentication via httpOnly cookies
 * Protected API routes
+* Strict payload validation using Zod schemas
 * Secure password hashing with bcrypt
 * Middleware-based authorization
 * Rate limiting on auth and LLM routes via express-rate-limit
@@ -256,10 +257,11 @@ pdf-parse mammoth
 
 * MongoDB
 
-### Authentication
+### Authentication & Security
 
 * JWT
 * bcrypt
+* Zod
 
 ### Content Processing
 

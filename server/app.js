@@ -46,5 +46,5 @@ app.get("/api/health", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`the server is currently running on: http://localhost:${PORT}`);
+  console.log(`API is running on: http://localhost:${PORT}`);
 });

@@ -28,7 +28,7 @@ const UrlSummarizer: React.FC = () => {
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<UrlFormValues>({
+  const { register, handleSubmit, setValue, watch, setError, formState: { errors } } = useForm<UrlFormValues>({
     resolver: zodResolver(urlSchema),
     defaultValues: {
       client: 'cerebras'
@@ -47,7 +47,17 @@ const UrlSummarizer: React.FC = () => {
       const summaryContent = res.data.output || res.data.summary || res.data.content || res.data;
       setSummary(typeof summaryContent === 'string' ? summaryContent : JSON.stringify(summaryContent, null, 2));
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to generate summary");
+      if (error.response?.data?.errors) {
+        const backendErrors = error.response.data.errors;
+        Object.keys(backendErrors).forEach((key) => {
+          setError(key as any, {
+            type: "server",
+            message: backendErrors[key][0],
+          });
+        });
+      } else {
+        toast.error(error.response?.data?.message || "Failed to generate summary");
+      }
     } finally {
       setIsLoading(false);
     }

@@ -13,6 +13,7 @@ Express.js + MongoDB backend for LayerZero. Handles JWT auth, multi-format conte
 | Database | MongoDB via Mongoose |
 | Caching & Rate Limit | Redis via Upstash (`@upstash/redis`) |
 | Auth | JWT in httpOnly cookies |
+| Validation | Zod |
 | AI — Cloud | Gemini (`@google/genai`), Cerebras (`@cerebras/cerebras_cloud_sdk`), Sarvam (`sarvamai`) |
 | AI — Local | Gemma via Ollama (`/api/chat`) |
 | File Parsing | `pdf-parse`, `mammoth` (for DOCX), `multer` (memory storage) |
