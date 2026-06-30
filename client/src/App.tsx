@@ -6,7 +6,6 @@ import { MainLayout } from './layouts/MainLayout';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
-// Pages
 import Home from './pages/Home';
 import About from './pages/About';
 import Login from './pages/Login';
