@@ -29,31 +29,31 @@ Whether you're summarizing a research paper, technical documentation, blog post,
   <tr>
     <td align="center">
       <strong>Homepage</strong><br>
-      <img src="./screenshots/homepage.png" width="400">
+      <img src="client/screenshots/homepage.png" width="400">
     </td>
     <td align="center">
       <strong>About</strong><br>
-      <img src="./screenshots/about.png" width="400">
+      <img src="client/screenshots/about.png" width="400">
     </td>
   </tr>
   <tr>
     <td align="center">
       <strong>Login</strong><br>
-      <img src="./screenshots/login.png" width="400">
+      <img src="client/screenshots/login.png" width="400">
     </td>
     <td align="center">
       <strong>Register</strong><br>
-      <img src="./screenshots/register.png" width="400">
+      <img src="client/screenshots/register.png" width="400">
     </td>
   </tr>
   <tr>
     <td align="center">
       <strong>URL Summarizer</strong><br>
-      <img src="./screenshots/url.png" width="400">
+      <img src="client/screenshots/url.png" width="400">
     </td>
     <td align="center">
       <strong>Response</strong><br>
-      <img src="./screenshots/response.png" width="400">
+      <img src="client/screenshots/response.png" width="400">
     </td>
   </tr>
 </table>
@@ -103,6 +103,8 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 ### Infrastructure
 
 * Docker Compose setup for client, server, and Redis
+* AWS EC2 deployment for backend services
+* Automated CI/CD pipeline via GitHub Actions
 * Separate Dockerfiles for frontend and backend
 * Upstash Redis integration for intelligent summary caching
 * SHA-256 content hashing for cache deduplication
@@ -276,6 +278,8 @@ pdf-parse mammoth
 
 * Docker
 * Docker Compose
+* AWS EC2
+* GitHub Actions
 * Redis
 * express-rate-limit
 
@@ -395,6 +399,10 @@ LayerZero/
 │
 └── README.md
 ```
+
+## Deployment
+
+The backend server is deployed on an **AWS EC2 instance**, managed through a fully automated CI/CD pipeline using **GitHub Actions**. Every push to the main branch automatically builds and deploys the latest version to the server, ensuring rapid and consistent updates.
 
 ---
 
