@@ -48,11 +48,25 @@ app.get("/api/health", (req, res) => {
 });
 
 if (process.env.NODE_ENV === 'production') {
-  https.createServer({
+  const server = https.createServer({
     key: fs.readFileSync(process.env.SSL_KEY_PATH),
     cert: fs.readFileSync(process.env.SSL_CERT_PATH)
-  }, app).listen(process.env.HTTPS_PORT, () => {
-    console.log(`API is running on: http://localhost:${process.env.HTTPS_PORT}`);
+  }, app);
+// this
+  server.on('tlsClientError', (err, tlsSocket) => {
+    console.error('TLS Client Error:', err);
+  });
+
+  server.on('clientError', (err, socket) => {
+    console.error('Client Error:', err);
+  });
+
+  server.on('error', (err) => {
+    console.error('Server Error:', err);
+  });
+//comment above
+  server.listen(process.env.HTTPS_PORT, () => {
+    console.log(`API is running on PORT: ${process.env.HTTPS_PORT}`);
   });
 } else {
   app.listen(PORT, () => {
