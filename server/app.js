@@ -51,7 +51,7 @@ if (process.env.NODE_ENV === 'production') {
   https.createServer({
     key: fs.readFileSync(process.env.SSL_KEY_PATH),
     cert: fs.readFileSync(process.env.SSL_CERT_PATH)
-  }).listen(process.env.HTTPS_PORT, () => {
+  }, app).listen(process.env.HTTPS_PORT, () => {
     console.log(`API is running on: http://localhost:${process.env.HTTPS_PORT}`);
   });
 } else {
