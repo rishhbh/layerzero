@@ -56,6 +56,6 @@ if (process.env.NODE_ENV === 'production') {
   });
 } else {
   app.listen(PORT, () => {
-    console.log(`API is running on: http://localhost:${PORT}`);
+    console.log(`Development API is running on: http://localhost:${PORT}`);
   });
 }
