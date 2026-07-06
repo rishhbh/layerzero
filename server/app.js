@@ -52,22 +52,11 @@ if (process.env.NODE_ENV === 'production') {
     key: fs.readFileSync(process.env.SSL_KEY_PATH),
     cert: fs.readFileSync(process.env.SSL_CERT_PATH)
   }, app);
-// this
-  server.on('tlsClientError', (err, tlsSocket) => {
-    console.error('TLS Client Error:', err);
-  });
 
-  server.on('clientError', (err, socket) => {
-    console.error('Client Error:', err);
-  });
-
-  server.on('error', (err) => {
-    console.error('Server Error:', err);
-  });
-//comment above
   server.listen(process.env.HTTPS_PORT, () => {
     console.log(`API is running on PORT: ${process.env.HTTPS_PORT}`);
   });
+  
 } else {
   app.listen(PORT, () => {
     console.log(`Development API is running on: http://localhost:${PORT}`);
