@@ -31,7 +31,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/api/auth", authRoute);
 app.use("/api/scrape", ingestRoute);
-app.use(handleError);
 
 app.get("/", (req, res) => {
   res.json({
@@ -47,6 +46,8 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.use(handleError);
+
 if (process.env.NODE_ENV === 'production') {
   const server = https.createServer({
     key: fs.readFileSync(process.env.SSL_KEY_PATH),
@@ -56,7 +57,6 @@ if (process.env.NODE_ENV === 'production') {
   server.listen(process.env.HTTPS_PORT, () => {
     console.log(`API is running on PORT: ${process.env.HTTPS_PORT}`);
   });
-  
 } else {
   app.listen(PORT, () => {
     console.log(`Development API is running on: http://localhost:${PORT}`);
