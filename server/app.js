@@ -1,6 +1,8 @@
 import "dotenv/config";
-import express from "express";
+import fs from 'fs';
 import cors from "cors";
+import https from 'https';
+import express from "express";
 import connectDatabase from "./config/db.js";
 import authRoute from "./routes/authRoute.js";
 import ingestRoute from "./routes/ingestRoute.js";
@@ -45,6 +47,15 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`API is running on: http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV === 'production') {
+  https.createServer({
+    key: fs.readFileSync(process.env.SSL_KEY_PATH),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+  }).listen(443, () => {
+    console.log(`API is running on: http://localhost:443`)
+  });
+} else {
+  app.listen(PORT, () => {
+    console.log(`API is running on: http://localhost:${PORT}`);
+  });
+}

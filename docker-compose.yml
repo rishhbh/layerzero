@@ -7,6 +7,9 @@ services:
   server:
     build: ./server
     ports:
-      - "3000:3000"
+      - "3000:3000" # development
+      - "443:443" # production HTTPS
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
