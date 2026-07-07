@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Layers, Zap, Shield, Globe, FileText, Cpu, Sparkles, Languages } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -35,6 +36,10 @@ const ScrollSection: React.FC<{ children: React.ReactNode, delayClass?: string }
 };
 
 const Home: React.FC = () => {
+  const { loading } = useAuth();
+
+  if (loading) return null;
+
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;

@@ -21,30 +21,41 @@ export const Navbar: React.FC = () => {
             GitHub
           </a>
           {user ? (
-            <>
-              <Link to="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 ease-out">
-                Dashboard
+            <div className="flex items-center space-x-3">
+              {/* Desktop only: username + continue button */}
+              <span className="text-sm font-medium text-foreground hidden md:block">
+                {user.name.split(' ')[0]}
+              </span>
+              <Link
+                to="/dashboard/url"
+                className="hidden md:block text-sm font-heading font-bold bg-primary py-2 px-3 rounded-none text-primary-foreground hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-150 ease-out"
+              >
+                Continue to Dashboard
+              </Link>
+              {/* Mobile only: compact dashboard icon */}
+              <Link
+                to="/dashboard/url"
+                className="md:hidden h-8 w-8 bg-primary rounded-none flex items-center justify-center text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                <Layers className="h-4 w-4" />
               </Link>
               <button
                 onClick={logout}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground flex items-center space-x-1 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-150 ease-out"
               >
                 <LogOut className="h-4 w-4" />
-                <span>Logout</span>
+                <span className="hidden md:block">Logout</span>
               </button>
-            </>
+            </div>
           ) : (
-            <>
-              <Link to="/login" className="text-sm font-medium text-muted-foreground hidden md:block hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 ease-out">
-                Login
-              </Link>
+            <div className="flex items-center space-x-3">
               <Link
-                to="/register"
+                to="/login"
                 className="text-sm font-heading font-bold bg-primary py-2 px-3 rounded-none text-primary-foreground hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-150 ease-out"
               >
                 Let's Go
               </Link>
-            </>
+            </div>
           )}
         </div>
       </div>

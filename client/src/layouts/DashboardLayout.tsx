@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Layers, FileText, Link as LinkIcon, LogOut, User } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -12,8 +12,10 @@ export const DashboardLayout: React.FC = () => {
       {/* Sidebar */}
       <aside className="w-64 border-r border-border bg-card hidden md:flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-border">
-          <Layers className="h-6 w-6 text-primary mr-2" />
-          <span className="font-heading font-bold text-xl tracking-tight">LayerZero</span>
+          <Link to="/" className="flex items-center cursor-pointer hover:opacity-80 transition-opacity">
+            <Layers className="h-6 w-6 text-primary mr-2" />
+            <span className="font-heading font-bold text-xl tracking-tight">LayerZero</span>
+          </Link>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
           <NavLink
@@ -68,12 +70,47 @@ export const DashboardLayout: React.FC = () => {
         </header>
         
         {/* Page Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6 pb-24 md:pb-6">
           <div className="max-w-4xl mx-auto">
             <Outlet />
           </div>
         </div>
       </main>
+      
+      {/* Mobile Bottom Nav — only visible below md */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border flex items-center justify-around h-16">
+        <NavLink
+          to="/dashboard/url"
+          className={({ isActive }) =>
+            cn(
+              "flex flex-col items-center justify-center space-y-1 px-6 py-2 text-xs transition-colors",
+              isActive ? "text-primary" : "text-muted-foreground"
+            )
+          }
+        >
+          <LinkIcon className="h-5 w-5" />
+          <span>URL</span>
+        </NavLink>
+        <NavLink
+          to="/dashboard/doc"
+          className={({ isActive }) =>
+            cn(
+              "flex flex-col items-center justify-center space-y-1 px-6 py-2 text-xs transition-colors",
+              isActive ? "text-primary" : "text-muted-foreground"
+            )
+          }
+        >
+          <FileText className="h-5 w-5" />
+          <span>Doc</span>
+        </NavLink>
+        <button
+          onClick={logout}
+          className="flex flex-col items-center justify-center space-y-1 px-6 py-2 text-xs text-muted-foreground transition-colors"
+        >
+          <LogOut className="h-5 w-5" />
+          <span>Logout</span>
+        </button>
+      </nav>
     </div>
   );
 };

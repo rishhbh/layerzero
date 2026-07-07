@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
 export default function CustomCursor() {
+  const isTouchDevice = () => window.matchMedia('(hover: none)').matches;
+  if (isTouchDevice()) return null;
+
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
 
