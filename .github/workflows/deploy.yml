@@ -1,9 +1,14 @@
-name: Deploy to EC2
+name: CD - Deploy Server to AWS EC2
 
 on:
   push:
-    branches:
-      - dev
+    branches: [dev]
+    paths:
+      - '.github/workflows/deploy.yml'
+      - 'server/**'
+      - 'docker-compose.yml'
+      - 'docker-compose.*.yml'
+      - 'server/Dockerfile'
 
 jobs:
   deploy:
