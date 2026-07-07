@@ -5,9 +5,12 @@ import extractText from "../services/document.js";
 import sarvamClient from "../config/llm/sarvamClient.js";
 import redis from "../services/redis.js";
 import hashContent from "../utils/hashContent.js";
+import { streamingModels } from "../config/llm/streamingClients.js";
+import { streamAndCache } from "../utils/streamResponse.js";
 
 const summariseDoc = async (req, res, next) => {
   const { client } = req.body;
+  const shouldStream = req.body.stream === "true" || req.body.stream === true;
   const models = {
     gemma: gemmaClient,
     gemini: geminiClient,
@@ -34,20 +37,44 @@ const summariseDoc = async (req, res, next) => {
     const hashedCacheKey = `${client}:${hashContent(text)}`;
     const cachedSummary = await redis.get(hashedCacheKey);
     
-    if (cachedSummary) {
-      return res.json({
-        summary: cachedSummary,
-      });
-    }
-    
-    const summary = await model(text);
-    await redis.set(hashedCacheKey, summary, {
-      ex: 7 * 24 * 60 * 60 // cached for 7 days
+ if (cachedSummary) {
+  if (shouldStream) {
+    return streamAndCache({
+      res,
+      stream: (async function* () {
+        yield cachedSummary;
+      })(),
+      redis,
+      cacheKey: null,
+      doneKey: "summary",
     });
-    
-    res.json({
-      summary,
-    });
+  }
+
+  return res.json({
+    summary: cachedSummary,
+  });
+}
+if (shouldStream) {
+  const streamingModel = streamingModels[client];
+
+  return streamAndCache({
+    res,
+    stream: streamingModel(text),
+    redis,
+    cacheKey: hashedCacheKey,
+    doneKey: "summary",
+  });
+}
+
+const summary = await model(text);
+
+await redis.set(hashedCacheKey, summary, {
+  ex: 7 * 24 * 60 * 60,
+});
+
+res.json({
+  summary,
+});
   } catch (err) {
     next(err);
   }

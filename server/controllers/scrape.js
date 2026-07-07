@@ -7,9 +7,13 @@ import cerebrasClient from "../config/llm/cerebrasClient.js";
 import sarvamClient from "../config/llm/sarvamClient.js";
 import redis from "../services/redis.js";
 import { webSummarySchema } from "../validators/summary.validator.js";
+import { streamingModels } from "../config/llm/streamingClients.js";
+import { streamAndCache } from "../utils/streamResponse.js";
 
 const scrapePage = async (req, res, next) => {
   const clientFields = webSummarySchema.safeParse(req.body);
+
+  const shouldStream = req.body.stream === true || req.query.stream === "true";
 
   if (!clientFields.success) {
     return res.status(400).json({
@@ -23,10 +27,22 @@ const scrapePage = async (req, res, next) => {
   const cachedData = await redis.get(cacheKey);
 
   if (cachedData) {
-    return res.json({
-      output: cachedData,
+  if (shouldStream) {
+    return streamAndCache({
+      res,
+      stream: (async function* () {
+        yield cachedData;
+      })(),
+      redis,
+      cacheKey: null,
+      doneKey: "output",
     });
   }
+
+  return res.json({
+    output: cachedData,
+  });
+}
 
   const models = {
     gemma: gemmaClient,
@@ -58,14 +74,27 @@ const scrapePage = async (req, res, next) => {
         message: "Could not extract article content",
       });
     }
-    const summary = await model(article.textContent);
-    await redis.set(cacheKey, summary, {
-      ex: 7 * 24 * 60 * 60 // cached for 7 days
-    });
+    if (shouldStream) {
+  const streamingModel = streamingModels[client];
 
-    res.json({
-      output: summary,
-    });
+  return streamAndCache({
+    res,
+    stream: streamingModel(article.textContent),
+    redis,
+    cacheKey,
+    doneKey: "output",
+  });
+}
+
+const summary = await model(article.textContent);
+
+await redis.set(cacheKey, summary, {
+  ex: 7 * 24 * 60 * 60,
+});
+
+res.json({
+  output: summary,
+});
   } catch (err) {
     next(err);
   }
