@@ -6,7 +6,7 @@ import { FileUpload } from '../components/FileUpload';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { EmptyState } from '../components/EmptyState';
-import api from '../lib/api';
+
 import { toast } from 'sonner';
 import { Loader2, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
@@ -39,8 +39,8 @@ try {
       setSummary((prev) => `${prev || ""}${delta}`);
     },
   });
-} catch (error: any) {
-  toast.error(error.message || "Failed to generate summary");
+} catch (error) {
+  toast.error(error instanceof Error ? error.message : "Failed to generate summary");
 } finally {
   setIsLoading(false);
 }

@@ -10,7 +10,7 @@ import { ModelSelector } from '../components/ModelSelector';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { EmptyState } from '../components/EmptyState';
-import api from '../lib/api';
+
 import { toast } from 'sonner';
 import { Loader2, Globe } from 'lucide-react';
 import jsPDF from 'jspdf';
@@ -29,7 +29,7 @@ const UrlSummarizer: React.FC = () => {
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, handleSubmit, setValue, watch, setError, formState: { errors } } = useForm<UrlFormValues>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<UrlFormValues>({
     resolver: zodResolver(urlSchema),
     defaultValues: {
       client: 'cerebras'
@@ -53,8 +53,8 @@ try {
       },
     }
   );
-} catch (error: any) {
-  toast.error(error.message || "Failed to generate summary");
+} catch (error) {
+  toast.error(error instanceof Error ? error.message : "Failed to generate summary");
 } finally {
   setIsLoading(false);
 }
