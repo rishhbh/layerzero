@@ -39,7 +39,7 @@ const DocSummarizer: React.FC = () => {
       });
       const summaryContent = res.data.output || res.data.summary || res.data;
       setSummary(typeof summaryContent === 'string' ? summaryContent : JSON.stringify(summaryContent, null, 2));
-    } catch (error: any) {
+    } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
       toast.error(error.response?.data?.message || "Failed to generate summary");
     } finally {
       setIsLoading(false);

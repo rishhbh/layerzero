@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
 export default function CustomCursor() {
-  const isTouchDevice = () => window.matchMedia('(hover: none)').matches;
-  if (isTouchDevice()) return null;
-
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
 
@@ -104,6 +101,12 @@ export default function CustomCursor() {
             transition: width 150ms ease, height 150ms ease, background-color 150ms ease, opacity 150ms ease;
             opacity: ${isVisible ? 1 : 0};
             mix-blend-mode: difference;
+          }
+
+          @media (hover: none) {
+            .custom-cursor-dot, .custom-cursor-ring {
+                display: none !important;
+            }
           }
         `}
       </style>

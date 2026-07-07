@@ -46,11 +46,11 @@ const UrlSummarizer: React.FC = () => {
 
       const summaryContent = res.data.output || res.data.summary || res.data.content || res.data;
       setSummary(typeof summaryContent === 'string' ? summaryContent : JSON.stringify(summaryContent, null, 2));
-    } catch (error: any) {
+    } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
       if (error.response?.data?.errors) {
         const backendErrors = error.response.data.errors;
         Object.keys(backendErrors).forEach((key) => {
-          setError(key as any, {
+          setError(key as any /* eslint-disable-line @typescript-eslint/no-explicit-any */, {
             type: "server",
             message: backendErrors[key][0],
           });
@@ -103,6 +103,7 @@ const UrlSummarizer: React.FC = () => {
             </div>
 
             <ModelSelector
+              // eslint-disable-next-line react-hooks/incompatible-library
               value={watch('client')}
               onChange={(val) => setValue('client', val)}
               disabled={isLoading}

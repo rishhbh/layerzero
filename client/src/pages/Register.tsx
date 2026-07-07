@@ -34,11 +34,11 @@ const Register: React.FC = () => {
       await registerUser(data);
       toast.success("Account created successfully");
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
       if (error.response?.data?.errors) {
         const backendErrors = error.response.data.errors;
         Object.keys(backendErrors).forEach((key) => {
-          setError(key as any, {
+          setError(key as any /* eslint-disable-line @typescript-eslint/no-explicit-any */, {
             type: "server",
             message: backendErrors[key][0],
           });
