@@ -16,6 +16,7 @@ import { Loader2, Globe } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { marked } from 'marked';
 import { Download } from 'lucide-react';
+import { postJsonStream } from "../lib/streamApi";
 
 const urlSchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL" }),
@@ -37,30 +38,26 @@ const UrlSummarizer: React.FC = () => {
 
   const onSubmit = async (data: UrlFormValues) => {
     setIsLoading(true);
-    setSummary(null);
-    try {
-      const res = await api.post('/scrape/web', {
-        url: data.url,
-        client: data.client
-      });
+setSummary("");
 
-      const summaryContent = res.data.output || res.data.summary || res.data.content || res.data;
-      setSummary(typeof summaryContent === 'string' ? summaryContent : JSON.stringify(summaryContent, null, 2));
-    } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
-      if (error.response?.data?.errors) {
-        const backendErrors = error.response.data.errors;
-        Object.keys(backendErrors).forEach((key) => {
-          setError(key as any /* eslint-disable-line @typescript-eslint/no-explicit-any */, {
-            type: "server",
-            message: backendErrors[key][0],
-          });
-        });
-      } else {
-        toast.error(error.response?.data?.message || "Failed to generate summary");
-      }
-    } finally {
-      setIsLoading(false);
+try {
+  await postJsonStream(
+    "/scrape/web",
+    {
+      url: data.url,
+      client: data.client,
+    },
+    {
+      onDelta: (delta) => {
+        setSummary((prev) => `${prev || ""}${delta}`);
+      },
     }
+  );
+} catch (error: any) {
+  toast.error(error.message || "Failed to generate summary");
+} finally {
+  setIsLoading(false);
+}
   };
 
   const downloadSummary = async (summary: string) => {

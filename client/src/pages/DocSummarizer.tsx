@@ -12,6 +12,7 @@ import { Loader2, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { marked } from 'marked';
 import { Download } from 'lucide-react';
+import { postFormStream } from "../lib/streamApi";
 
 const DocSummarizer: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -26,24 +27,23 @@ const DocSummarizer: React.FC = () => {
     }
 
     setIsLoading(true);
-    setSummary(null);
-    try {
-      const formData = new FormData();
-      formData.append('document', file);
-      formData.append('client', client);
+setSummary("");
 
-      const res = await api.post('/scrape/doc', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      const summaryContent = res.data.output || res.data.summary || res.data;
-      setSummary(typeof summaryContent === 'string' ? summaryContent : JSON.stringify(summaryContent, null, 2));
-    } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
-      toast.error(error.response?.data?.message || "Failed to generate summary");
-    } finally {
-      setIsLoading(false);
-    }
+try {
+  const formData = new FormData();
+  formData.append("document", file);
+  formData.append("client", client);
+
+  await postFormStream("/scrape/doc", formData, {
+    onDelta: (delta) => {
+      setSummary((prev) => `${prev || ""}${delta}`);
+    },
+  });
+} catch (error: any) {
+  toast.error(error.message || "Failed to generate summary");
+} finally {
+  setIsLoading(false);
+}
   };
 
   const downloadSummary = async (summary: string) => {
