@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Layers, FileText, Link as LinkIcon, LogOut, User } from 'lucide-react';
+import { FileText, Link as LinkIcon, LogOut, User } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export const DashboardLayout: React.FC = () => {

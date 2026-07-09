@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Layers } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
