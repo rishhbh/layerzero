@@ -13,7 +13,7 @@ export const DashboardLayout: React.FC = () => {
       <aside className="w-64 border-r border-border bg-card hidden md:flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-border">
           <Link to="/" className="flex items-center cursor-pointer hover:opacity-80 transition-opacity">
-            <Layers className="h-6 w-6 text-primary mr-2" />
+            <img src="/logo.png" alt="LayerZero Logo" className="h-6 w-6 object-cover rounded-sm mr-2" />
             <span className="font-heading font-bold text-xl tracking-tight">LayerZero</span>
           </Link>
         </div>

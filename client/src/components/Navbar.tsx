@@ -10,14 +10,14 @@ export const Navbar: React.FC = () => {
     <nav className="sticky top-0 z-50 w-full glass-surface">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2 text-primary hover:scale-105 active:scale-95 transition-all duration-150 ease-out">
-          <Layers className="h-6 w-6" />
+          <img src="/logo.png" alt="LayerZero Logo" className="h-6 w-6 object-cover rounded-sm" />
           <span className="font-heading font-bold text-xl tracking-tight text-foreground">LayerZero</span>
         </Link>
         <div className="flex items-center sm:space-x-16 xs:space-x-2">
           <Link to="/about" className="text-sm hidden md:block font-medium text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 ease-out">
             About
           </Link>
-          <a href="https://github.com/rishhbh" target="_blank" rel="noreferrer" className="text-sm hidden md:block font-medium text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 ease-out">
+          <a href="https://github.com/rishhbh/layerzero" target="_blank" rel="noreferrer" className="text-sm hidden md:block font-medium text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all duration-150 ease-out">
             GitHub
           </a>
           {user ? (
