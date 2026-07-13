@@ -27,22 +27,22 @@ const scrapePage = async (req, res, next) => {
   const cachedData = await redis.get(cacheKey);
 
   if (cachedData) {
-  if (shouldStream) {
-    return streamAndCache({
-      res,
-      stream: (async function* () {
-        yield cachedData;
-      })(),
-      redis,
-      cacheKey: null,
-      doneKey: "output",
+    if (shouldStream) {
+      return streamAndCache({
+        res,
+        stream: (async function* () {
+          yield cachedData;
+        })(),
+        redis,
+        cacheKey: null,
+        doneKey: "output",
+      });
+    }
+
+    return res.json({
+      output: cachedData,
     });
   }
-
-  return res.json({
-    output: cachedData,
-  });
-}
 
   const models = {
     gemma: gemmaClient,
@@ -75,26 +75,26 @@ const scrapePage = async (req, res, next) => {
       });
     }
     if (shouldStream) {
-  const streamingModel = streamingModels[client];
+      const streamingModel = streamingModels[client];
 
-  return streamAndCache({
-    res,
-    stream: streamingModel(article.textContent),
-    redis,
-    cacheKey,
-    doneKey: "output",
-  });
-}
+      return streamAndCache({
+        res,
+        stream: streamingModel(article.textContent),
+        redis,
+        cacheKey,
+        doneKey: "output",
+      });
+    }
 
-const summary = await model(article.textContent);
+    const summary = await model(article.textContent);
 
-await redis.set(cacheKey, summary, {
-  ex: 7 * 24 * 60 * 60,
-});
+    await redis.set(cacheKey, summary, {
+      ex: 7 * 24 * 60 * 60,
+    });
 
-res.json({
-  output: summary,
-});
+    res.json({
+      output: summary,
+    });
   } catch (err) {
     next(err);
   }
