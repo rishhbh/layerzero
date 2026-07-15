@@ -63,18 +63,18 @@ server/
 Copy `.env.example` to `.env` and fill in the values.
 
 ```env
-PORT=3000 # Assign whatever port you like
-MONGODB_URI=YOUR_MONGODB_URI
-OLLAMA_MODEL=YOUR_OLLAMA_MODEL
-OLLAMA_BASE_URL=http://localhost:11434 # Ollama runs locally at port 11434
-GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-CEREBRAS_API_KEY=YOUR_CEREBRAS_API_KEY
-SARVAM_API_KEY=YOUR_SARVAM_API_KEY
-JWT_SECRET=YOUR_JWT_SECRET
-NODE_ENV=development # Depends upon the environment you're working on, either development or production
-CLIENT_URL=https://layerzero.rishhbh.workers.dev
-UPSTASH_REDIS_REST_URL=YOUR_UPSTASH_REDIS_REST_URL
-UPSTASH_REDIS_REST_TOKEN=YOUR_UPSTASH_REDIS_REST_TOKEN
+PORT=
+MONGODB_URI=
+OLLAMA_MODEL=
+OLLAMA_BASE_URL=
+GEMINI_API_KEY=
+CEREBRAS_API_KEY=
+SARVAM_API_KEY=
+JWT_SECRET=
+NODE_ENV=
+CLIENT_URL=
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
 > `OLLAMA_BASE_URL` defaults to `http://localhost:11434` — Ollama must be running locally with the specified model pulled.
@@ -91,7 +91,7 @@ UPSTASH_REDIS_REST_TOKEN=YOUR_UPSTASH_REDIS_REST_TOKEN
 
 Returns the current health status of the API.
 
-**Response `201`**
+**Response `201 Created`**
 ```json
 {
   "status": "OK",
@@ -104,7 +104,7 @@ Returns the current health status of the API.
 
 ### Auth — `/api/auth`
 
-All auth routes are public (no token required).
+All auth routes are public (no token required) and are protected by rate limiting.
 
 ---
 
@@ -112,16 +112,14 @@ All auth routes are public (no token required).
 
 Registers a new user and sets a JWT cookie.
 
-**Request body**
-```json
-{
-  "name": "Rishabh",
-  "email": "rishabh@example.com",
-  "password": "yourpassword"
-}
-```
+**Request Body (`application/json`)**
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | Yes | The user's name (min 3, max 45 chars) |
+| `email` | string | Yes | A valid email address |
+| `password` | string | Yes | The user's password (min 8 chars) |
 
-**Response `200`**
+**Response `200 OK`**
 ```json
 {
   "_id": "user_id",
@@ -129,8 +127,23 @@ Registers a new user and sets a JWT cookie.
   "email": "rishabh@example.com"
 }
 ```
+*Note: Sets `jwt` httpOnly cookie (7d expiry).*
 
-Sets `jwt` httpOnly cookie (7d expiry).
+**Error Responses**
+- `400 Bad Request`: If validation fails (e.g., invalid email format, weak password).
+  ```json
+  {
+    "errors": {
+      "email": ["Enter a valid email address"]
+    }
+  }
+  ```
+- `400 Bad Request`: If the email is already registered.
+  ```json
+  {
+    "message": "This user is already registerd with us!"
+  }
+  ```
 
 ---
 
@@ -138,15 +151,13 @@ Sets `jwt` httpOnly cookie (7d expiry).
 
 Authenticates an existing user and sets a JWT cookie.
 
-**Request body**
-```json
-{
-  "email": "rishabh@example.com",
-  "password": "yourpassword"
-}
-```
+**Request Body (`application/json`)**
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `email` | string | Yes | A valid email address |
+| `password` | string | Yes | The user's password |
 
-**Response `200`**
+**Response `200 OK`**
 ```json
 {
   "_id": "user_id",
@@ -154,17 +165,27 @@ Authenticates an existing user and sets a JWT cookie.
   "email": "rishabh@example.com"
 }
 ```
+*Note: Sets `jwt` httpOnly cookie (7d expiry).*
+
+**Error Responses**
+- `400 Bad Request`: If validation fails.
+- `400 Bad Request`: If invalid credentials are provided.
+  ```json
+  {
+    "message": "Invalid username or password"
+  }
+  ```
 
 ---
 
 #### `POST /api/auth/user/logout`
 
-Clears the JWT cookie.
+Clears the JWT cookie to log the user out.
 
-**Response `200`**
+**Response `200 OK`**
 ```json
 {
-  "message": "The user has been logged out successfully!"
+  "message": "The user has been logged out successfully"
 }
 ```
 
@@ -174,7 +195,7 @@ Clears the JWT cookie.
 
 Returns the currently authenticated user. Requires a valid JWT cookie.
 
-**Response `200`**
+**Response `200 OK`**
 ```json
 {
   "_id": "user_id",
@@ -183,54 +204,84 @@ Returns the currently authenticated user. Requires a valid JWT cookie.
 }
 ```
 
+**Error Responses**
+- `401 Unauthorized`: If the token is missing or invalid.
+- `404 Not Found`: If the user could not be found.
+
 ---
 
 ### Ingestion — `/api/scrape`
 
-All ingestion routes are protected — requires a valid `jwt` cookie.
+All ingestion routes are protected — requires a valid `jwt` cookie and are protected by rate limiting.
 
 ---
 
 #### `POST /api/scrape/web`
 
-Scrapes a URL, extracts readable content via Readability, and summarizes it using the selected model. Results are cached in Redis.
+Scrapes a URL, extracts readable content via Readability, and summarizes it using the selected model. Results are cached in Redis. Supports streaming for real-time text generation.
 
-**Request body**
-```json
-{
-  "url": "https://example.com/some-article",
-  "client": "gemini"
-}
-```
+**Request Body (`application/json`)**
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `url` | string | Yes | A valid URL to scrape |
+| `client` | string | Yes | The AI model to use (`"gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"`) |
+| `stream` | boolean | No | Set to `true` to enable streaming response |
 
-`client` accepts `"gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"`.
+**Query Parameters**
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `stream` | boolean | No | Set to `true` to enable streaming response (`?stream=true`) |
 
-**Response `200`**
+**Response `200 OK` (Standard)**
 ```json
 {
   "output": "AI-generated summary..."
 }
 ```
 
+**Response `200 OK` (Streaming)**
+If `stream` is `true`, the API streams plain text directly, returning the summary tokens progressively.
+
+**Error Responses**
+- `400 Bad Request`: If validation fails (e.g., invalid URL, invalid model).
+- `400 Bad Request`: If the article content could not be extracted from the provided URL.
+  ```json
+  {
+    "message": "Could not extract article content"
+  }
+  ```
+
 ---
 
 #### `POST /api/scrape/doc`
 
-Accepts a Document file upload (PDF/DOCX), extracts text, and summarizes it using the selected model. Results are cached in Redis using a content hash.
+Accepts a Document file upload (PDF/DOCX), extracts text, and summarizes it using the selected model. Results are cached in Redis using a content hash. Supports streaming for real-time text generation.
 
-**Request** — `multipart/form-data`
+**Request (`multipart/form-data`)**
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `document` | File | Yes | PDF or DOCX file (max 5MB) |
+| `client` | string | Yes | The AI model to use (`"gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"`) |
+| `stream` | boolean/string | No | Set to `true` or `"true"` to enable streaming response |
 
-| Field | Type | Description |
-|---|---|---|
-| `document` | File | PDF or DOCX file (max 5MB) |
-| `client` | string | `"gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"` |
-
-**Response `200`**
+**Response `200 OK` (Standard)**
 ```json
 {
   "summary": "AI-generated summary..."
 }
 ```
+
+**Response `200 OK` (Streaming)**
+If `stream` is `true`, the API streams plain text directly, returning the summary tokens progressively.
+
+**Error Responses**
+- `400 Bad Request`: If no file was uploaded.
+  ```json
+  {
+    "message": "No file uploaded!"
+  }
+  ```
+- `400 Bad Request`: If an invalid model was specified.
 
 ---
 
