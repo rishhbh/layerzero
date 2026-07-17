@@ -69,7 +69,7 @@ if (shouldStream) {
 const summary = await model(text);
 
 await redis.set(hashedCacheKey, summary, {
-  ex: 7 * 24 * 60 * 60,
+  ex: 1 * 24 * 60 * 60,
 });
 
 res.json({
