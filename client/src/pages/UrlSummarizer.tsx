@@ -10,13 +10,12 @@ import { ModelSelector } from '../components/ModelSelector';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { EmptyState } from '../components/EmptyState';
-
+import api from '../lib/api';
 import { toast } from 'sonner';
 import { Loader2, Globe } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { marked } from 'marked';
 import { Download } from 'lucide-react';
-import { postJsonStream } from "../lib/streamApi";
 
 const urlSchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL" }),
@@ -38,26 +37,19 @@ const UrlSummarizer: React.FC = () => {
 
   const onSubmit = async (data: UrlFormValues) => {
     setIsLoading(true);
-setSummary("");
+    setSummary("");
 
-try {
-  await postJsonStream(
-    "/scrape/web",
-    {
-      url: data.url,
-      client: data.client,
-    },
-    {
-      onDelta: (delta) => {
-        setSummary((prev) => `${prev || ""}${delta}`);
-      },
+    try {
+      const res = await api.post('/scrape/web', {
+        url: data.url,
+        client: data.client,
+      });
+      setSummary(res.data.output);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to generate summary");
+    } finally {
+      setIsLoading(false);
     }
-  );
-} catch (error) {
-  toast.error(error instanceof Error ? error.message : "Failed to generate summary");
-} finally {
-  setIsLoading(false);
-}
   };
 
   const downloadSummary = async (summary: string) => {
@@ -122,8 +114,8 @@ try {
       <div className="mt-8">
         <div className='flex flex-row justify-between items-center mb-4'>
           <h2 className="text-xl font-heading font-bold">Response</h2>
-          <Button 
-            className='rounded-none px-3 py-2 font-heading font-medium cursor-pointer bg-primary text-primary-foreground flex gap-2 hover:opacity-90 transition-opacity' 
+          <Button
+            className='rounded-none px-3 py-2 font-heading font-medium cursor-pointer bg-primary text-primary-foreground flex gap-2 hover:opacity-90 transition-opacity'
             onClick={() => summary && downloadSummary(summary)}
           >
             <Download size={20} />Export

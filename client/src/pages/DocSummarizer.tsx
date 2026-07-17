@@ -6,13 +6,13 @@ import { FileUpload } from '../components/FileUpload';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { EmptyState } from '../components/EmptyState';
-
+import api from '../lib/api';
 import { toast } from 'sonner';
 import { Loader2, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { marked } from 'marked';
 import { Download } from 'lucide-react';
-import { postFormStream } from "../lib/streamApi";
+
 
 const DocSummarizer: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -27,23 +27,23 @@ const DocSummarizer: React.FC = () => {
     }
 
     setIsLoading(true);
-setSummary("");
+    setSummary("");
 
-try {
-  const formData = new FormData();
-  formData.append("document", file);
-  formData.append("client", client);
+    try {
+      const formData = new FormData();
+      formData.append("document", file);
+      formData.append("client", client);
 
-  await postFormStream("/scrape/doc", formData, {
-    onDelta: (delta) => {
-      setSummary((prev) => `${prev || ""}${delta}`);
-    },
-  });
-} catch (error) {
-  toast.error(error instanceof Error ? error.message : "Failed to generate summary");
-} finally {
-  setIsLoading(false);
-}
+      const res = await api.post('/scrape/doc', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setSummary(res.data.summary);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to generate summary");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const downloadSummary = async (summary: string) => {
@@ -91,9 +91,9 @@ try {
       <div className="mt-8">
         <div className='flex flex-row justify-between items-center mb-4'>
           <h2 className="text-xl font-heading font-bold">Response</h2>
-          <Button 
-            className='rounded-none px-3 py-2 font-heading font-medium cursor-pointer bg-primary text-primary-foreground flex gap-2 hover:opacity-90 transition-opacity' 
-            onClick={()=> summary && downloadSummary(summary)}
+          <Button
+            className='rounded-none px-3 py-2 font-heading font-medium cursor-pointer bg-primary text-primary-foreground flex gap-2 hover:opacity-90 transition-opacity'
+            onClick={() => summary && downloadSummary(summary)}
           >
             <Download size={20} />Export
           </Button>

@@ -8,6 +8,9 @@ services:
 
   server:
     build: ./server
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     ports:
       - "3000:3000" # development
       - "443:443" # production HTTPS
