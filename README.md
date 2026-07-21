@@ -76,7 +76,7 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 * Upstash Redis-powered caching layer
 * SHA-256 content fingerprinting for document and URL deduplication
 * Cache-first retrieval for previously processed content
-* Automatic 7-day cache expiration via Redis TTLs
+* Automatic 1-day cache expiration via Redis TTLs
 * Eliminates redundant LLM inference for identical requests
 * Reduced repeated summary latency from ~8.5s to ~150ms (~98% improvement)
 
@@ -128,7 +128,7 @@ This enables more natural summarization and conversational workflows for users w
 
 ```text
 ┌─────────────────┐
-│   React Client  │
+│  React Client   │
 └────────┬────────┘
          │
          ▼
@@ -138,7 +138,7 @@ This enables more natural summarization and conversational workflows for users w
          │
          ▼
 ┌─────────────────┐
-│  Content Parsing │
+│ Content Parsing │
 └────────┬────────┘
          │
          ▼
@@ -148,21 +148,21 @@ This enables more natural summarization and conversational workflows for users w
          │
          ▼
 ┌─────────────────┐
-│  Redis Cache    │
+│   Redis Cache   │
 └────┬─────────┬──┘
      │Hit      │Miss
      ▼         ▼
    Summary   Model Selection
-              │
-       ┌──────┼──────┬──────┐
-       ▼      ▼      ▼      ▼
-     Gemini  GPT OSS Gemma Sarvam
-                  │
-                  ▼
-               Summary
-                  │
-                  ▼
-            Store in Redis
+                   │
+           ┌───────┼───────┬───────┐
+           ▼       ▼       ▼       ▼
+        Gemini   GPT OSS  Gemma  Sarvam
+                   │
+                   ▼
+                 Summary
+                   │
+                   ▼
+              Store in Redis
 ```
 
 ---
