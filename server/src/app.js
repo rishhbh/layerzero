@@ -1,5 +1,3 @@
-import "dotenv/config";
-import fs from 'fs';
 import cors from "cors";
 import https from 'https';
 import express from "express";
@@ -8,9 +6,9 @@ import authRoute from "./routes/authRoute.js";
 import ingestRoute from "./routes/ingestRoute.js";
 import handleError from "./middlewares/errorHandler.js";
 import cookieParser from "cookie-parser";
+import morgan from "morgan";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.set("trust proxy", 1);
 app.use(
@@ -25,15 +23,14 @@ app.use(
   }),
 );
 
-await connectDatabase();
-
+app.use(morgan('dev'));
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api/auth", authRoute);
 app.use("/api/scrape", ingestRoute);
 
 app.get("/", (req, res) => {
-  res.json({
+  return res.status(200).json({
     message: "API is running",
   });
 });
@@ -48,17 +45,4 @@ app.get("/api/health", (req, res) => {
 
 app.use(handleError);
 
-if (process.env.NODE_ENV === 'production') {
-  const server = https.createServer({
-    key: fs.readFileSync(process.env.SSL_KEY_PATH),
-    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
-  }, app);
-
-  server.listen(process.env.HTTPS_PORT, () => {
-    console.log(`API is running on PORT: ${process.env.HTTPS_PORT}`);
-  });
-} else {
-  app.listen(PORT, () => {
-    console.log(`Development API is running on: http://localhost:${PORT}`);
-  });
-}
+export default app;
