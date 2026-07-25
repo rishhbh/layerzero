@@ -1,5 +1,4 @@
 import cors from "cors";
-import https from 'https';
 import express from "express";
 import connectDatabase from "./config/db.js";
 import authRoute from "./routes/authRoute.js";
