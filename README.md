@@ -98,7 +98,7 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 * Strict payload validation using Zod schemas
 * Secure password hashing with bcrypt
 * Middleware-based authorization
-* Rate limiting on auth and LLM routes via express-rate-limit
+* Rate limiting on auth and LLM routes via Upstash Redis
 
 ### Infrastructure
 
@@ -281,7 +281,7 @@ pdf-parse mammoth
 * AWS EC2
 * GitHub Actions
 * Redis
-* express-rate-limit
+* @upstash/ratelimit
 
 ### AI Models
 

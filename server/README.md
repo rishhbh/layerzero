@@ -40,9 +40,9 @@ server/
 │   └── scrape.js           # URL → scrape → summarize (with Redis caching)
 ├── middlewares/
 │   ├── authMiddleware.js   # protectRoute (JWT verification)
-│   ├── authRateLimit.js    # Rate limiting for auth routes (Upstash Redis)
 │   ├── errorHandler.js     # Global error handler
-│   └── llmRateLimit.js     # Rate limiting for LLM/Ingestion routes
+│   ├── rateLimiter.js      # Rate limit middleware wrapper
+│   └── redisRateLimit.js   # Upstash Redis instances for auth & ai limiters
 ├── models/
 │   └── User.js             # Mongoose user schema
 ├── routes/

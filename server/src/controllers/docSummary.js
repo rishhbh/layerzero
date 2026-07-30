@@ -3,7 +3,7 @@ import geminiClient from "../config/llm/geminiClient.js";
 import cerebrasClient from "../config/llm/cerebrasClient.js";
 import extractText from "../services/document.js";
 import sarvamClient from "../config/llm/sarvamClient.js";
-import redis from "../services/redis.js";
+import redis from "../config/redis.js";
 import hashContent from "../utils/hashContent.js";
 import { streamingModels } from "../config/llm/streamingClients.js";
 import { streamAndCache } from "../utils/streamResponse.js";
@@ -11,6 +11,7 @@ import { streamAndCache } from "../utils/streamResponse.js";
 const summariseDoc = async (req, res, next) => {
   const { client } = req.body;
   const shouldStream = req.body.stream === "true" || req.body.stream === true;
+  
   const models = {
     gemma: gemmaClient,
     gemini: geminiClient,

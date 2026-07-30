@@ -3,19 +3,20 @@ import scrapePage from '../controllers/scrape.js';
 import { protectRoute } from '../middlewares/authMiddleware.js';
 import summariseDoc from '../controllers/docSummary.js';
 import upload from '../services/multer.js';
-import rateLimiter from '../middlewares/llmRateLimit.js';
+import { rateLimit } from '../middlewares/rateLimiter.js';
+import { aiLimiter } from '../middlewares/redisRateLimit.js';
 
 const router = express.Router();
 
 router.post(
     '/web', 
-    rateLimiter, 
+    rateLimit(aiLimiter), 
     protectRoute, 
     scrapePage
 );
 router.post(
     '/doc', 
-    rateLimiter,
+    rateLimit(aiLimiter),
     protectRoute, 
     upload.single("document"), 
     summariseDoc

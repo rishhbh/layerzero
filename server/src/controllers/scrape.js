@@ -5,7 +5,7 @@ import geminiClient from "../config/llm/geminiClient.js";
 import gemmaClient from "../config/llm/gemmaClient.js";
 import cerebrasClient from "../config/llm/cerebrasClient.js";
 import sarvamClient from "../config/llm/sarvamClient.js";
-import redis from "../services/redis.js";
+import redis from "../config/redis.js";
 import { webSummarySchema } from "../validators/summary.validator.js";
 import { streamingModels } from "../config/llm/streamingClients.js";
 import { streamAndCache } from "../utils/streamResponse.js";
