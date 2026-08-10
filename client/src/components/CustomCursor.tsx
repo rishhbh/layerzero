@@ -28,8 +28,8 @@ export default function CustomCursor() {
         target.tagName.toLowerCase() === 'a' ||
         target.closest('button') !== null ||
         target.closest('a') !== null ||
-        target.classList.contains('interactive-item') ||
-        target.closest('.interactive-item') !== null;
+        target.classList.contains('editorial-card') ||
+        target.closest('.editorial-card') !== null;
       
       setIsHovering(isInteractive);
     };
@@ -48,8 +48,8 @@ export default function CustomCursor() {
     window.addEventListener('mouseenter', onMouseEnter);
 
     const updateRing = () => {
-      ring.current.x += (mouse.current.x - ring.current.x) * 0.1;
-      ring.current.y += (mouse.current.y - ring.current.y) * 0.1;
+      ring.current.x += (mouse.current.x - ring.current.x) * 0.14;
+      ring.current.y += (mouse.current.y - ring.current.y) * 0.14;
 
       if (ringRef.current) {
         ringRef.current.style.transform = `translate3d(${ring.current.x}px, ${ring.current.y}px, 0) translate(-50%, -50%)`;
@@ -73,15 +73,21 @@ export default function CustomCursor() {
     <>
       <style>
         {`
+          @media (hover: hover) and (pointer: fine) {
+            html, body, a, button, input, select, textarea, [role="button"] {
+              cursor: none !important;
+            }
+          }
+
           .custom-cursor-dot {
             position: fixed;
             top: 0;
             left: 0;
             width: 6px;
             height: 6px;
-            background-color: #fafafa;
+            background-color: var(--foreground);
             border-radius: 50%;
-            pointer-events: none;
+            pointer-events: none !important;
             z-index: 9999;
             transition: opacity 150ms ease;
             opacity: ${isVisible ? (isHovering ? 0 : 1) : 0};
@@ -91,21 +97,20 @@ export default function CustomCursor() {
             position: fixed;
             top: 0;
             left: 0;
-            width: ${isHovering ? '48px' : '32px'};
-            height: ${isHovering ? '48px' : '32px'};
-            border: 2px solid #fafafa;
-            background-color: ${isHovering ? '#fafafa' : 'transparent'};
+            width: ${isHovering ? '42px' : '26px'};
+            height: ${isHovering ? '42px' : '26px'};
+            border: 1px solid var(--foreground);
+            background-color: transparent !important;
             border-radius: 50%;
-            pointer-events: none;
+            pointer-events: none !important;
             z-index: 9998;
-            transition: width 150ms ease, height 150ms ease, background-color 150ms ease, opacity 150ms ease;
-            opacity: ${isVisible ? 1 : 0};
-            mix-blend-mode: difference;
+            transition: width 150ms ease, height 150ms ease, border-color 150ms ease, opacity 150ms ease;
+            opacity: ${isVisible ? 0.75 : 0};
           }
 
           @media (hover: none) {
             .custom-cursor-dot, .custom-cursor-ring {
-                display: none !important;
+              display: none !important;
             }
           }
         `}

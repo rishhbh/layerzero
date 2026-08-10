@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
-import { Layers, Shield, Zap } from 'lucide-react';
+import { Layers, Zap, Server } from 'lucide-react';
 
 const ScrollSection: React.FC<{ children: React.ReactNode, delayClass?: string }> = ({ children, delayClass = '' }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -34,75 +34,79 @@ const ScrollSection: React.FC<{ children: React.ReactNode, delayClass?: string }
 
 const About: React.FC = () => {
   return (
-    <div className="container mx-auto px-4 py-16 max-w-4xl animate-blur-fade-in">
+    <div className="container mx-auto px-6 md:px-12 py-16 md:py-24 max-w-5xl text-foreground font-sans">
       <ScrollSection delayClass="delay-50">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-heading font-bold tracking-tight mb-4">About LayerZero</h1>
-          <p className="text-lg text-muted-foreground">The hybrid AI summarization platform built for modern workflows.</p>
+        <div className="text-left mb-16 relative border-b border-border pb-12">
+          <div className="gradient-orb gradient-orb-mint w-[300px] h-[300px] top-[-50px] left-[10%] -z-0" />
+          <span className="inline-block px-3.5 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-semibold uppercase tracking-wider mb-4">Platform Documentation</span>
+          <h1 className="text-4xl md:text-6xl font-heading font-light tracking-tight text-foreground mb-4">About layerzero</h1>
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl font-sans leading-relaxed">
+            A hybrid AI summarization architecture built for quiet, high-density editorial workflows.
+          </p>
         </div>
       </ScrollSection>
 
-      <div className="space-y-12">
+      <div className="space-y-12 text-left">
         <ScrollSection>
-          <section>
-            <h2 className="text-2xl font-heading font-bold mb-4 flex items-center">
-              <Layers className="mr-2 text-primary" /> What LayerZero Does
+          <section className="editorial-card p-8 md:p-10 bg-card border border-border rounded-2xl">
+            <h2 className="text-2xl md:text-3xl font-heading font-light text-foreground mb-4 flex items-center">
+              <Layers className="mr-3 text-foreground h-6 w-6" /> What layerzero Does
             </h2>
-            <p className="text-muted-foreground leading-relaxed mb-6">
-              LayerZero is a unified platform for extracting, processing, and summarizing vast amounts of textual data. Whether you're dealing with dense PDF reports, lengthy DOCX files, or sprawling web articles, LayerZero strips away the noise and provides concise, structured, and accurate summaries.
+            <p className="text-muted-foreground leading-relaxed font-sans text-base">
+              layerzero is a unified platform for extracting, processing, and summarizing vast amounts of textual data. Whether dealing with dense PDF reports, lengthy DOCX files, or web articles, layerzero strips away noise and provides concise, structured, and accurate summaries.
             </p>
           </section>
         </ScrollSection>
 
         <ScrollSection>
           <section>
-            <h2 className="text-2xl font-heading font-bold mb-4 flex items-center">
-              <Zap className="mr-2 text-primary" /> Why Hybrid AI?
+            <h2 className="text-2xl md:text-3xl font-heading font-light text-foreground mb-4 flex items-center">
+              <Zap className="mr-3 text-foreground h-6 w-6" /> Hybrid AI Inference
             </h2>
-            <p className="text-muted-foreground leading-relaxed mb-6">
+            <p className="text-muted-foreground leading-relaxed font-sans text-base mb-8 max-w-3xl">
               We believe in picking the model that fits the task. Choose the inference engine that matches your requirements: maximum reasoning power (Gemini), fast open-source inference (Cerebras), complete privacy (Gemma, local-only), or native multilingual support (Sarvam).
             </p>
-            <div className="grid md:grid-cols-2 gap-6 mt-8">
+            <div className="grid md:grid-cols-2 gap-6">
               <ScrollSection delayClass="delay-50">
-                <Card className="rounded-none glass-surface-interactive interactive-item-large">
+                <Card className="rounded-2xl bg-card border-border hover:border-input transition-all p-2">
                   <CardHeader>
-                    <CardTitle className="text-xl font-heading">Gemini (Cloud)</CardTitle>
+                    <CardTitle className="text-xl font-heading font-light text-foreground">Gemini (Cloud)</CardTitle>
                   </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">
-                    Google's Gemini Pro models offer massive context windows and state-of-the-art reasoning. Ideal for complex synthesis across large documents, extracting nuanced insights, and generating highly structured outputs.
+                  <CardContent className="text-sm text-muted-foreground font-sans leading-relaxed">
+                    Google's Gemini Pro models offer massive context windows and state-of-the-art reasoning. Ideal for complex synthesis across large documents and structural outputs.
                   </CardContent>
                 </Card>
               </ScrollSection>
 
               <ScrollSection delayClass="delay-100">
-                <Card className="rounded-none glass-surface-interactive interactive-item-large">
+                <Card className="rounded-2xl bg-card border-border hover:border-input transition-all p-2">
                   <CardHeader>
-                    <CardTitle className="text-xl font-heading">GPT OSS 120B (Cerebras)</CardTitle>
+                    <CardTitle className="text-xl font-heading font-light text-foreground">GPT OSS 120B (Cerebras)</CardTitle>
                   </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">
-                    OpenAI's open-weight 120B parameter model, served at exceptional speed through Cerebras' inference hardware. A fast, capable, open-source middle ground between Gemini's polish and Gemma's privacy.
+                  <CardContent className="text-sm text-muted-foreground font-sans leading-relaxed">
+                    OpenAI's open-weight 120B parameter model served at speed via Cerebras hardware. A fast open-source middle ground between cloud polish and local privacy.
                   </CardContent>
                 </Card>
               </ScrollSection>
 
               <ScrollSection delayClass="delay-150">
-                <Card className="rounded-none glass-surface-interactive interactive-item-large">
+                <Card className="rounded-2xl bg-card border-border hover:border-input transition-all p-2">
                   <CardHeader>
-                    <CardTitle className="text-xl font-heading">Gemma (Local)</CardTitle>
+                    <CardTitle className="text-xl font-heading font-light text-foreground">Gemma (Local)</CardTitle>
                   </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">
-                    Run powerful lightweight open models directly on your hardware. Zero data transmission means absolute privacy. Perfect for confidential financial reports, personal data, or proprietary source code.
+                  <CardContent className="text-sm text-muted-foreground font-sans leading-relaxed">
+                    Run lightweight open models directly on your hardware. Zero data transmission means absolute privacy for confidential financial reports or personal data.
                   </CardContent>
                 </Card>
               </ScrollSection>
 
               <ScrollSection delayClass="delay-200">
-                <Card className="rounded-none glass-surface-interactive interactive-item-large">
+                <Card className="rounded-2xl bg-card border-border hover:border-input transition-all p-2">
                   <CardHeader>
-                    <CardTitle className="text-xl font-heading">Sarvam 30B</CardTitle>
+                    <CardTitle className="text-xl font-heading font-light text-foreground">Sarvam 30B</CardTitle>
                   </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">
-                    Purpose-built for Hinglish and multilingual Indian-language workflows. Ideal when source content or desired output blends English with Hindi or other Indian languages, without losing natural phrasing.
+                  <CardContent className="text-sm text-muted-foreground font-sans leading-relaxed">
+                    Purpose-built for Hinglish and multilingual Indian-language workflows. Ideal when source content blends English with Hindi or Indian regional phrasing.
                   </CardContent>
                 </Card>
               </ScrollSection>
@@ -111,17 +115,58 @@ const About: React.FC = () => {
         </ScrollSection>
 
         <ScrollSection>
-          <section>
-            <h2 className="text-2xl font-heading font-bold mb-4 flex items-center">
-              <Shield className="mr-2 text-primary" /> Architecture Overview
+          <section className="editorial-card p-8 md:p-10 bg-card border border-border rounded-2xl">
+            <h2 className="text-2xl md:text-3xl font-heading font-light text-foreground mb-6 flex items-center">
+              <Server className="mr-3 text-foreground h-6 w-6" /> System Pipeline & Infrastructure
             </h2>
-            <div className="bg-card border border-border rounded-none p-6 glass-surface">
-              <ul className="space-y-4 text-sm text-muted-foreground list-disc list-inside">
-                <li><strong className="text-foreground">Data Ingestion:</strong> Robust parsers for PDF, DOCX, and HTML DOM structures.</li>
-                <li><strong className="text-foreground">Sanitization:</strong> Removal of boilerplate, ads, and irrelevant structural elements.</li>
-                <li><strong className="text-foreground">Routing Layer:</strong> Secure dispatch across four AI providers — three cloud-hosted, one fully local.</li>
-                <li><strong className="text-foreground">Generation:</strong> Markdown-formatted responses returned from the selected model and rendered on the client.</li>
-              </ul>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3.5 text-sm text-muted-foreground font-sans">
+                <span className="h-1.5 w-1.5 rounded-full bg-foreground shrink-0 mt-2" />
+                <div className="flex-1 leading-relaxed">
+                  <span className="font-semibold text-foreground mr-1.5">Data Ingestion & Parsing:</span>
+                  <span>High-performance parsers for PDF, DOCX, and HTML DOM structures with boilerplate removal.</span>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5 text-sm text-muted-foreground font-sans">
+                <span className="h-1.5 w-1.5 rounded-full bg-foreground shrink-0 mt-2" />
+                <div className="flex-1 leading-relaxed">
+                  <span className="font-semibold text-foreground mr-1.5">Rate Limiting:</span>
+                  <span>Granular API rate limiting using express-rate-limit and Upstash Redis IP throttling to protect model quotas.</span>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5 text-sm text-muted-foreground font-sans">
+                <span className="h-1.5 w-1.5 rounded-full bg-foreground shrink-0 mt-2" />
+                <div className="flex-1 leading-relaxed">
+                  <span className="font-semibold text-foreground mr-1.5">Multi-Tier Caching:</span>
+                  <span>Upstash Redis distributed caching layer for instant responses on repeated summarization requests.</span>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5 text-sm text-muted-foreground font-sans">
+                <span className="h-1.5 w-1.5 rounded-full bg-foreground shrink-0 mt-2" />
+                <div className="flex-1 leading-relaxed">
+                  <span className="font-semibold text-foreground mr-1.5">Routing Layer:</span>
+                  <span>Dynamic SSE streaming dispatcher across 4 AI providers (Gemini, Cerebras, Sarvam, Gemma).</span>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5 text-sm text-muted-foreground font-sans">
+                <span className="h-1.5 w-1.5 rounded-full bg-foreground shrink-0 mt-2" />
+                <div className="flex-1 leading-relaxed">
+                  <span className="font-semibold text-foreground mr-1.5">CI/CD & Cloud Infrastructure:</span>
+                  <span>Continuous integration and automated deployment pipeline hosted on AWS with Docker containerization.</span>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5 text-sm text-muted-foreground font-sans">
+                <span className="h-1.5 w-1.5 rounded-full bg-foreground shrink-0 mt-2" />
+                <div className="flex-1 leading-relaxed">
+                  <span className="font-semibold text-foreground mr-1.5">Client Generation & Export:</span>
+                  <span>Interactive markdown streaming with client-side PDF export generation.</span>
+                </div>
+              </div>
             </div>
           </section>
         </ScrollSection>

@@ -12,18 +12,20 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({ value, onChange, d
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="model-select">AI Model</Label>
+      <Label htmlFor="model-select" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
+        AI Model Engine
+      </Label>
       <select
         id="model-select"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="flex h-10 w-full rounded-none border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
+        className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm text-foreground transition-all focus-visible:outline-none focus-visible:border-foreground focus-visible:ring-1 focus-visible:ring-foreground disabled:cursor-not-allowed disabled:opacity-50 appearance-none font-sans"
       >
-        <option value="gemini">Gemini 2.5 Flash (Long Docs)</option>
-        <option value="cerebras">Cerebras GPT-OSS-120B (Fastest)</option>
-        <option value="sarvam">Sarvam 30B (Hinglish)</option>
-        {isDevelopment && <option value="gemma">Gemma 4 (Local Inference)</option>}
+        <option value="gemini" className="bg-card text-foreground">Gemini 2.5 Flash (Cloud Reasoning)</option>
+        <option value="cerebras" className="bg-card text-foreground">Cerebras GPT-OSS-120B (High-Speed Inference)</option>
+        <option value="sarvam" className="bg-card text-foreground">Sarvam 30B (Hinglish & Multilingual)</option>
+        {isDevelopment && <option value="gemma" className="bg-card text-foreground">Gemma 4 (Local Offline Inference)</option>}
       </select>
     </div>
   );

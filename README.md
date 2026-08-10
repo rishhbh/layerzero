@@ -1,8 +1,8 @@
-# LayerZero
+# Layerzero
 
 AI-powered content summarization platform built with React, Express.js, MongoDB, and a hybrid LLM architecture.
 
-LayerZero allows users to summarize PDFs, DOCX files, and web content using cloud-based or locally hosted language models. The platform focuses on simplicity, speed, and flexibility while providing a secure authentication layer and a clean content-processing pipeline.
+Layerzero allows users to summarize PDFs, DOCX files, and web content using cloud-based or locally hosted language models. The platform focuses on simplicity, speed, and flexibility while providing a secure authentication layer and a clean content-processing pipeline.
 
 ---
 
@@ -10,7 +10,7 @@ LayerZero allows users to summarize PDFs, DOCX files, and web content using clou
 
 Most content summarization tools force users into a single AI provider.
 
-LayerZero takes a different approach.
+Layerzero takes a different approach.
 
 Users can choose between:
 
@@ -19,7 +19,7 @@ Users can choose between:
 * **Gemma 4 via Ollama** for local inference and privacy-focused workflows* 
 * **Sarvam 30B** for Hinglish and multilingual conversational workflows*
 
-Whether you're summarizing a research paper, technical documentation, blog post, or an article you definitely intended to read later, LayerZero extracts the content and generates concise summaries within seconds.
+Whether you're summarizing a research paper, technical documentation, blog post, or an article you definitely intended to read later, Layerzero extracts the content and generates concise summaries within seconds.
 
 ---
 
@@ -48,8 +48,8 @@ Whether you're summarizing a research paper, technical documentation, blog post,
   </tr>
   <tr>
     <td align="center">
-      <strong>URL Summarizer</strong><br>
-      <img src="client/screenshots/url.png" width="400">
+      <strong>Doc Summarizer</strong><br>
+      <img src="client/screenshots/doc.png" width="400">
     </td>
     <td align="center">
       <strong>Response</strong><br>
@@ -64,7 +64,7 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 
 ### Content Ingestion
 
-* PDF document uploads
+* PDF document uploads (parsed via `pdfjs-dist`)
 * DOCX document uploads
 * Website URL summarization
 * Automatic text extraction
@@ -80,8 +80,9 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 * Eliminates redundant LLM inference for identical requests
 * Reduced repeated summary latency from ~8.5s to ~150ms (~98% improvement)
 
-### AI-Powered Summarization
+### AI-Powered Summarization & Streaming
 
+* Real-Time Token Streaming (Server-Sent Events / SSE)
 * Gemini 2.5 Flash integration
 * GPT OSS 120B integration via Cerebras
 * Gemma 4 integration via Ollama
@@ -98,15 +99,22 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 * Strict payload validation using Zod schemas
 * Secure password hashing with bcrypt
 * Middleware-based authorization
-* Rate limiting on auth and LLM routes via Upstash Redis
+* Custom Upstash Redis sliding window rate limiting (`@upstash/ratelimit`) on auth and LLM routes
+
+### Testing & Reliability
+
+* Automated unit and integration testing suite via Jest & Supertest
+* In-memory MongoDB (`mongodb-memory-server`) for fast, isolated test runs
+* Automated test coverage for authentication flows and health checks
 
 ### Infrastructure
 
+* One-command startup script (`start.sh`) for Docker Compose
 * Docker Compose setup for client, server, and Redis
-* AWS EC2 deployment for backend services
+* AWS EC2 deployment for backend services (HTTP / HTTPS with SSL support)
 * Automated CI/CD pipeline via GitHub Actions
-* Separate Dockerfiles for frontend and backend
-* Upstash Redis integration for intelligent summary caching
+* Centralized server source directory (`server/src/`) with `app.js` and `server.js` separation
+* Upstash Redis integration for intelligent summary caching and rate limiting
 * SHA-256 content hashing for cache deduplication
 * Cache-first retrieval strategy with automatic TTL expiration
 * Local Ollama support via `host.docker.internal`
@@ -118,7 +126,7 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 
 ### Multilingual Support
 
-LayerZero includes Sarvam 30B support for Hinglish and multilingual interactions.
+Layerzero includes Sarvam 30B support for Hinglish and multilingual interactions.
 
 This enables more natural summarization and conversational workflows for users who frequently switch between English and Indian languages, while maintaining the same unified processing pipeline used across all supported models.
 
@@ -216,7 +224,7 @@ PDF / DOCX Upload
        │
    ┌───┴───┐
    ▼       ▼
-pdf-parse mammoth
+pdfjs-dist mammoth
    │       │
    └───┬───┘
        ▼
@@ -232,11 +240,12 @@ pdf-parse mammoth
 ### Technologies Used
 
 * Multer
-* pdf-parse
+* pdfjs-dist
 * mammoth
 * Gemini API
 * Cerebras API
 * Gemma 4
+* Sarvam AI
 
 ---
 
@@ -249,15 +258,22 @@ pdf-parse mammoth
 * Tailwind CSS
 * shadcn/ui
 * jsPDF
+* remark-gfm & rehype-raw
 
 ### Backend
 
 * Node.js
-* Express.js
+* Express.js v5
+* morgan (HTTP Logger)
 
 ### Database
 
-* MongoDB
+* MongoDB via Mongoose
+
+### Caching & Rate Limiting
+
+* Upstash Redis (`@upstash/redis`)
+* Upstash Ratelimit (`@upstash/ratelimit`)
 
 ### Authentication & Security
 
@@ -269,19 +285,23 @@ pdf-parse mammoth
 
 * Axios
 * JSDOM
-* Mozilla Readability
+* Mozilla Readability (`@mozilla/readability`)
 * Multer
-* pdf-parse
+* pdfjs-dist
 * mammoth
+
+### Testing
+
+* Jest
+* Supertest
+* mongodb-memory-server
 
 ### Infrastructure
 
-* Docker
-* Docker Compose
+* Docker & Docker Compose
 * AWS EC2
 * GitHub Actions
 * Redis
-* @upstash/ratelimit
 
 ### AI Models
 
@@ -301,6 +321,7 @@ pdf-parse mammoth
 ```http
 POST /api/auth/user/register
 ```
+*Returns `201 Created` with user object and sets `jwt` httpOnly cookie.*
 
 #### Login
 
@@ -324,7 +345,7 @@ GET /api/auth/user/check
 
 ### Protected Routes
 
-Authentication required.
+Authentication required. All endpoints support both standard JSON responses and real-time Server-Sent Events (SSE) streaming.
 
 #### Website Summarization
 
@@ -337,7 +358,8 @@ Request Body
 ```json
 {
   "url": "https://example.com/article",
-  "client": "gemini"
+  "client": "gemini",
+  "stream": true
 }
 ```
 
@@ -347,6 +369,8 @@ Request Body
 * `cerebras`
 * `gemma`
 * `sarvam`
+
+*Optional*: Send `stream: true` in JSON body or pass `?stream=true` as a query parameter to enable real-time SSE token streaming (`text/event-stream`).
 
 ---
 
@@ -367,16 +391,21 @@ Fields
 ```text
 document: file.pdf or file.docx
 client: gemini or cerebras or gemma or sarvam
+stream: true (optional)
 ```
+
+*Optional*: Include `stream: true` to receive a real-time SSE token stream (`text/event-stream`).
 
 ---
 
 ## Project Structure
 
 ```bash
-LayerZero/
+Layerzero/
 │
 ├── docker-compose.yml
+├── start.sh
+├── README.md
 │
 ├── client/
 │   ├── Dockerfile
@@ -387,17 +416,24 @@ LayerZero/
 │       ├── layouts/
 │       └── lib/
 │
-├── server/
-│   ├── Dockerfile
-│   ├── app.js
-│   ├── controllers/
-│   ├── middlewares/
-│   ├── routes/
-│   ├── models/
-│   ├── services/
-│   └── config/
-│
-└── README.md
+└── server/
+    ├── Dockerfile
+    ├── jest.config.js
+    ├── src/
+    │   ├── app.js
+    │   ├── server.js
+    │   ├── config/
+    │   ├── controllers/
+    │   ├── middlewares/
+    │   ├── models/
+    │   ├── routes/
+    │   ├── services/
+    │   ├── utils/
+    │   └── validators/
+    └── tests/
+        ├── setup.js
+        ├── auth.test.js
+        └── health.test.js
 ```
 
 ## Deployment
@@ -406,15 +442,34 @@ The backend server is deployed on an **AWS EC2 instance**, managed through a ful
 
 ---
 
-## Running with Docker
+## Quick Startup (with Docker)
+
+Run the convenient startup script to build and launch all services in detached mode:
 
 ```bash
-docker-compose up --build
+./start.sh
+```
+
+Or manually using Docker Compose:
+
+```bash
+docker compose up --build -d
 ```
 
 This starts the client, server, and Redis containers together.
 
 > To use Gemma locally inside Docker, ensure Ollama is running on your host machine and set `OLLAMA_BASE_URL=http://host.docker.internal:11434` in your server `.env`.
+
+---
+
+## Running Backend Tests
+
+Layerzero features an automated testing suite using Jest, Supertest, and an in-memory MongoDB server.
+
+```bash
+cd server
+npm test
+```
 
 ---
 
@@ -474,17 +529,18 @@ npm run dev
 
 ---
 
-## Why LayerZero?
+## Why Layerzero?
 
 Most summarization platforms rely entirely on cloud-hosted AI.
 
-LayerZero combines cloud and local inference, giving users more control over privacy, performance, and operational costs.
+Layerzero combines cloud and local inference, giving users more control over privacy, performance, and operational costs.
 
 Benefits include:
 
 * Reduced API dependency
 * Local AI execution
 * Four selectable AI models
+* Real-time streaming support
 * Improved privacy via local inference
 * Hybrid cloud/local architecture
 
@@ -502,7 +558,6 @@ Because sometimes you want the power of a cloud model, and sometimes you want yo
 
 ## Coming Soon
 
-* Streaming responses
 * Summary history and persistence
 * Multi-document summarization
 * Background processing for large documents
@@ -515,4 +570,4 @@ MIT License
 
 ---
 
-Built with React, Node(Express), MongoDB, Redis and a stubborn refusal to choose between cloud AI and local AI.
+Built with React, Node (Express), MongoDB, Redis and a stubborn refusal to choose between cloud AI and local AI.

@@ -1,6 +1,6 @@
-# LayerZero — Backend
+# Layerzero — Backend
 
-Express.js + MongoDB backend for LayerZero. Handles JWT auth, multi-format content ingestion (PDF, DOCX, URL), and hybrid AI summarization routing between Gemini, Cerebras, Sarvam AI, and Gemma via Ollama. Redis caching and rate limiting are implemented using Upstash.
+Express.js + MongoDB backend for Layerzero. Handles JWT auth, multi-format content ingestion (PDF, DOCX, URL), and hybrid AI summarization routing between Gemini, Cerebras, Sarvam AI, and Gemma via Ollama. Features real-time SSE response streaming, custom Upstash Redis rate limiting, intelligent cache deduplication, and an automated Jest testing suite.
 
 ---
 
@@ -8,16 +8,19 @@ Express.js + MongoDB backend for LayerZero. Handles JWT auth, multi-format conte
 
 | Layer | Tech |
 |---|---|
-| Runtime | Node.js (ESM) |
+| Runtime | Node.js (ESM, v22-alpine in Docker) |
 | Framework | Express.js v5 |
+| Server & Logging | `server.js` (HTTPS/HTTP), `morgan` ('dev') |
 | Database | MongoDB via Mongoose |
-| Caching & Rate Limit | Redis via Upstash (`@upstash/redis`) |
-| Auth | JWT in httpOnly cookies |
-| Validation | Zod |
+| Caching & Rate Limit | Upstash Redis (`@upstash/redis` & `@upstash/ratelimit`) |
+| Auth | JWT in httpOnly cookies (`jsonwebtoken`, `bcrypt`) |
+| Validation | Zod (`auth.validator.js`, `summary.validator.js`) |
 | AI — Cloud | Gemini (`@google/genai`), Cerebras (`@cerebras/cerebras_cloud_sdk`), Sarvam (`sarvamai`) |
 | AI — Local | Gemma via Ollama (`/api/chat`) |
-| File Parsing | `pdf-parse`, `mammoth` (for DOCX), `multer` (memory storage) |
+| Streaming | Server-Sent Events (`text/event-stream`) |
+| File Parsing | `pdfjs-dist` (for PDF), `mammoth` (for DOCX), `multer` (memory storage) |
 | Web Scraping | `axios` + `jsdom` + `@mozilla/readability` |
+| Testing | Jest, Supertest, `mongodb-memory-server` |
 
 ---
 
@@ -25,35 +28,53 @@ Express.js + MongoDB backend for LayerZero. Handles JWT auth, multi-format conte
 
 ```
 server/
-├── app.js                  # Entry point, middleware stack, route mounting
-├── config/
-│   ├── db.js               # MongoDB connection
-│   ├── docxparse.js        # DOCX buffer → text extractor
-│   ├── llm/                # AI Client wrappers (Cerebras, Gemini, Gemma, Sarvam)
-│   ├── pdfparse.js         # PDF buffer → text extractor
-│   ├── sarvamSystemPrompt.js # Specialized system prompt for Sarvam AI
-│   ├── systemPrompt.js     # Default system prompt for other models
-│   └── utils.js            # JWT generation utility
-├── controllers/
-│   ├── auth.js             # register, login, logout, checkUser
-│   ├── docSummary.js       # Document upload (PDF/DOCX) → parse → summarize (with Redis caching)
-│   └── scrape.js           # URL → scrape → summarize (with Redis caching)
-├── middlewares/
-│   ├── authMiddleware.js   # protectRoute (JWT verification)
-│   ├── errorHandler.js     # Global error handler
-│   ├── rateLimiter.js      # Rate limit middleware wrapper
-│   └── redisRateLimit.js   # Upstash Redis instances for auth & ai limiters
-├── models/
-│   └── User.js             # Mongoose user schema
-├── routes/
-│   ├── authRoute.js        # /api/auth/*
-│   └── ingestRoute.js      # /api/scrape/*
-├── services/
-│   ├── document.js         # Document handling services
-│   ├── multer.js           # Multer config (memory storage, 5MB limit)
-│   └── redis.js            # Upstash Redis client configuration
-└── utils/
-    └── hashContent.js      # Utility for generating cache keys via crypto hash
+├── Dockerfile              # Docker container instructions
+├── jest.config.js          # Jest configuration for ESM
+├── package.json            # NPM scripts & dependencies
+├── tests/
+│   ├── setup.js            # In-memory MongoDB lifecycle hooks
+│   ├── auth.test.js        # Auth endpoint unit/integration tests
+│   └── health.test.js      # Health check endpoint test
+└── src/
+    ├── app.js              # Express application setup & middleware stack
+    ├── server.js           # Server startup, HTTPS SSL option, & DB connection
+    ├── config/
+    │   ├── db.js           # MongoDB connection handler
+    │   ├── docxparse.js    # DOCX buffer → text extractor (mammoth)
+    │   ├── generateJWT.js  # JWT cookie generator utility
+    │   ├── pdfparse.js     # PDF buffer → text extractor (pdfjs-dist)
+    │   ├── redis.js        # Upstash Redis client configuration
+    │   ├── sarvamSystemPrompt.js # Sarvam AI Hinglish system prompt
+    │   ├── systemPrompt.js # Layerzero default system prompt
+    │   └── llm/            # AI Client wrappers (standard & streaming)
+    │       ├── cerebrasClient.js
+    │       ├── geminiClient.js
+    │       ├── gemmaClient.js
+    │       ├── sarvamClient.js
+    │       └── streamingClients.js
+    ├── controllers/
+    │   ├── auth.js         # registerUser, loginUser, logout, checkUser
+    │   ├── docSummary.js   # Document upload → parse → summarize/stream
+    │   └── scrape.js       # URL scrape → readability → summarize/stream
+    ├── middlewares/
+    │   ├── authMiddleware.js # protectRoute (JWT cookie verification)
+    │   ├── errorHandler.js   # Global error handling middleware
+    │   ├── rateLimiter.js    # Rate limiter middleware wrapper
+    │   └── redisRateLimit.js # Upstash sliding window instances (auth & AI)
+    ├── models/
+    │   └── User.js         # Mongoose User schema & password hashing
+    ├── routes/
+    │   ├── authRoute.js    # /api/auth/* endpoints
+    │   └── ingestRoute.js  # /api/scrape/* endpoints
+    ├── services/
+    │   ├── document.js     # Mimetype document extraction router
+    │   └── multer.js       # Multer memory storage config (5MB max)
+    ├── utils/
+    │   ├── hashContent.js  # Content SHA-256 hash generator for cache keys
+    │   └── streamResponse.js # SSE streaming & caching pipeline
+    └── validators/
+        ├── auth.validator.js # Zod schemas for registration & login
+        └── summary.validator.js # Zod schema for web summarization
 ```
 
 ---
@@ -81,6 +102,17 @@ UPSTASH_REDIS_REST_TOKEN=
 
 ---
 
+## Rate Limiting
+
+Layerzero implements custom sliding window rate limiting powered by `@upstash/ratelimit` and Upstash Redis.
+
+- **Auth Limiter (`authLimiter`)**: 20 requests per 10-minute window (applied to `/api/auth/*`).
+- **AI Limiter (`aiLimiter`)**: 30 requests per 15-minute window (applied to `/api/scrape/*`).
+- Identifies requests by `req.user.id` (if authenticated) or `req.ip`.
+- Bypassed automatically when `NODE_ENV === 'test'`.
+
+---
+
 ## API Reference
 
 ### Health Check
@@ -91,7 +123,7 @@ UPSTASH_REDIS_REST_TOKEN=
 
 Returns the current health status of the API.
 
-**Response `201 Created`**
+**Response `200 OK`**
 ```json
 {
   "status": "OK",
@@ -119,7 +151,7 @@ Registers a new user and sets a JWT cookie.
 | `email` | string | Yes | A valid email address |
 | `password` | string | Yes | The user's password (min 8 chars) |
 
-**Response `200 OK`**
+**Response `201 Created`**
 ```json
 {
   "_id": "user_id",
@@ -212,35 +244,46 @@ Returns the currently authenticated user. Requires a valid JWT cookie.
 
 ### Ingestion — `/api/scrape`
 
-All ingestion routes are protected — requires a valid `jwt` cookie and are protected by rate limiting.
+All ingestion routes require a valid `jwt` cookie and are protected by the `aiLimiter` rate limiter.
 
 ---
 
 #### `POST /api/scrape/web`
 
-Scrapes a URL, extracts readable content via Readability, and summarizes it using the selected model. Results are cached in Redis. Supports streaming for real-time text generation.
+Scrapes a URL, extracts readable content via Readability, and summarizes it using the selected model. Results are cached in Redis. Supports Server-Sent Events (SSE) streaming.
 
 **Request Body (`application/json`)**
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `url` | string | Yes | A valid URL to scrape |
 | `client` | string | Yes | The AI model to use (`"gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"`) |
-| `stream` | boolean | No | Set to `true` to enable streaming response |
+| `stream` | boolean | No | Set to `true` to enable SSE streaming response |
 
 **Query Parameters**
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `stream` | boolean | No | Set to `true` to enable streaming response (`?stream=true`) |
+| `stream` | boolean | No | Set to `true` to enable SSE streaming response (`?stream=true`) |
 
-**Response `200 OK` (Standard)**
+**Response `200 OK` (Standard JSON)**
 ```json
 {
   "output": "AI-generated summary..."
 }
 ```
 
-**Response `200 OK` (Streaming)**
-If `stream` is `true`, the API streams plain text directly, returning the summary tokens progressively.
+**Response `200 OK` (Streaming — `text/event-stream`)**
+When `stream: true`, responses stream via Server-Sent Events (SSE):
+
+```text
+event: chunk
+data: {"delta":"Summary "}
+
+event: chunk
+data: {"delta":"token..."}
+
+event: done
+data: {"output":"Full summary text..."}
+```
 
 **Error Responses**
 - `400 Bad Request`: If validation fails (e.g., invalid URL, invalid model).
@@ -255,24 +298,32 @@ If `stream` is `true`, the API streams plain text directly, returning the summar
 
 #### `POST /api/scrape/doc`
 
-Accepts a Document file upload (PDF/DOCX), extracts text, and summarizes it using the selected model. Results are cached in Redis using a content hash. Supports streaming for real-time text generation.
+Accepts a Document file upload (PDF/DOCX), extracts text, and summarizes it using the selected model. Results are cached in Redis using a content hash. Supports SSE streaming.
 
 **Request (`multipart/form-data`)**
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `document` | File | Yes | PDF or DOCX file (max 5MB) |
 | `client` | string | Yes | The AI model to use (`"gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"`) |
-| `stream` | boolean/string | No | Set to `true` or `"true"` to enable streaming response |
+| `stream` | boolean/string | No | Set to `true` or `"true"` to enable SSE streaming |
 
-**Response `200 OK` (Standard)**
+**Response `200 OK` (Standard JSON)**
 ```json
 {
   "summary": "AI-generated summary..."
 }
 ```
 
-**Response `200 OK` (Streaming)**
-If `stream` is `true`, the API streams plain text directly, returning the summary tokens progressively.
+**Response `200 OK` (Streaming — `text/event-stream`)**
+When `stream` is `true`, responses stream via Server-Sent Events (SSE):
+
+```text
+event: chunk
+data: {"delta":"Summary "}
+
+event: done
+data: {"summary":"Full summary text..."}
+```
 
 **Error Responses**
 - `400 Bad Request`: If no file was uploaded.
@@ -282,6 +333,21 @@ If `stream` is `true`, the API streams plain text directly, returning the summar
   }
   ```
 - `400 Bad Request`: If an invalid model was specified.
+
+---
+
+## Automated Testing
+
+The backend includes a unit and integration test suite using Jest, Supertest, and `mongodb-memory-server`.
+
+```bash
+cd server
+npm test
+```
+
+- **Environment**: Configured via `.env.test`.
+- **In-Memory Database**: Tests run isolated in memory without polluting your development MongoDB instance.
+- **Coverage**: Includes authentication (`POST /register`, `POST /login`, `POST /logout`) and health checks (`GET /api/health`).
 
 ---
 
@@ -295,7 +361,7 @@ Client
   ├─ POST /register or /login
   │       │
   │       ▼
-  │   Validate fields
+  │   Validate fields (Zod)
   │       │
   │       ▼
   │   Hash password (bcrypt, salt 10)   ← register only
@@ -307,7 +373,7 @@ Client
   │   generateToken() → JWT (7d)
   │       │
   │       ▼
-  │   Set httpOnly cookie + return user object
+  │   Set httpOnly cookie + return user object (201 for register, 200 for login)
   │
   └─ GET /check → reads req.user (set by protectRoute)
 ```
@@ -342,25 +408,22 @@ req.user = user → next()
 POST /api/scrape/doc  (multipart/form-data)
   │
   ▼
-llmRateLimit + protectRoute (JWT check)
+aiLimiter + protectRoute (JWT check)
   │
   ▼
 multer memoryStorage → req.file.buffer
   │
   ▼
-Hash content → Check Redis cache → Return if exists
+Hash content → Check Redis cache → Return if exists (JSON or stream)
   │
   ▼
-Document Service → raw text string (pdf-parse / mammoth)
+Document Service → raw text string (pdfjs-dist / mammoth)
   │
   ▼
 model = models[req.body.client]  (gemini | gemma | cerebras | sarvam)
   │
-  ▼
-model(text) → summary string
-  │
-  ▼
-Cache in Redis → res.json({ summary })
+  ├─ Standard → model(text) → summary string → Cache in Redis → res.json({ summary })
+  └─ Streaming → streamAndCache() → SSE chunks → Cache in Redis → event: done
 ```
 
 ### URL Summarization Flow
@@ -369,10 +432,10 @@ Cache in Redis → res.json({ summary })
 POST /api/scrape/web
   │
   ▼
-llmRateLimit + protectRoute (JWT check)
+aiLimiter + protectRoute (JWT check)
   │
   ▼
-Check Redis cache for URL → Return if exists
+Check Redis cache for URL → Return if exists (JSON or stream)
   │
   ▼
 axios.get(url) with browser User-Agent
@@ -385,11 +448,8 @@ JSDOM + Readability → article.textContent
   ▼
 model = models[req.body.client]  (gemini | gemma | cerebras | sarvam)
   │
-  ▼
-model(textContent) → summary string
-  │
-  ▼
-Cache in Redis → res.json({ output })
+  ├─ Standard → model(textContent) → summary string → Cache in Redis → res.json({ output })
+  └─ Streaming → streamAndCache() → SSE chunks → Cache in Redis → event: done
 ```
 
 ### Error Handling Flow
@@ -409,20 +469,16 @@ handleError middleware
 ## AI Clients
 
 ### Gemini
-Uses `@google/genai` SDK with `gemini-2.5-flash`.
+Uses `@google/genai` SDK with `gemini-2.5-flash`. Supports streaming (`streamGemini`).
 
 ### Cerebras
-Uses `@cerebras/cerebras_cloud_sdk` for fast, cloud-based inference.
+Uses `@cerebras/cerebras_cloud_sdk` with `gpt-oss-120b` for fast cloud inference. Supports streaming (`streamCerebras`).
 
 ### Sarvam AI
-Uses `sarvamai` SDK tailored for Indic language contexts or specialized tasks using a dedicated system prompt.
+Uses `sarvamai` SDK tailored for Hinglish & Indic language contexts with specialized prompt. Supports streaming (`streamSarvam`).
 
 ### Gemma
-Hits the local Ollama `/api/chat` endpoint via native `fetch`. Runs fully offline.
-
-### Model Routing
-
-Client selection is explicit — the caller passes `client: "gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"` in the request body. Both ingestion controllers use the same routing pattern to fetch the respective API wrapper from `config/llm/`.
+Hits the local Ollama `/api/chat` endpoint via native `fetch`. Runs fully offline. Supports streaming (`streamGemma`).
 
 ---
 

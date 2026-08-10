@@ -33,7 +33,7 @@ const Register: React.FC = () => {
     try {
       await registerUser(data);
       toast.success("Account created successfully");
-      navigate('/dashboard');
+      navigate('/dashboard/url');
     } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
       if (error.response?.data?.errors) {
         const backendErrors = error.response.data.errors;
@@ -52,70 +52,73 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 animate-blur-fade-in">
-      <Card className="w-full max-w-md rounded-none">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-heading">Create an account</CardTitle>
-          <CardDescription>Enter your details to get started with LayerZero</CardDescription>
+    <div className="flex-1 flex items-center justify-center p-6 py-16 md:py-24 bg-background min-h-[calc(100vh-4rem)] relative overflow-hidden">
+      <div className="gradient-orb gradient-orb-mint w-[350px] h-[350px] top-[10%] right-[10%] -z-0" />
+      <div className="gradient-orb gradient-orb-lavender w-[350px] h-[350px] bottom-[10%] left-[10%] -z-0" />
+
+      <Card className="w-full max-w-md rounded-2xl border-border bg-card relative z-10 p-2 md:p-4">
+        <CardHeader className="text-left pb-2">
+          <CardTitle className="text-3xl font-heading font-light text-foreground">Create an account</CardTitle>
+          <CardDescription className="text-muted-foreground text-sm">Enter your details to get started with layerzero</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-4 text-left">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name" className="text-xs uppercase tracking-wider font-semibold text-foreground/80">Full Name</Label>
               <Input
                 id="name"
                 placeholder="John Doe"
                 {...register('name')}
                 disabled={isLoading}
-                className="rounded-none"
+                className="rounded-lg"
               />
               {errors.name && (
-                <p className="text-sm text-foreground/90 font-medium pl-2 border-l border-foreground mt-1">
+                <p className="text-sm text-red-600 font-medium pl-2 border-l-2 border-red-600 mt-1">
                   {errors.name.message}
                 </p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-xs uppercase tracking-wider font-semibold text-foreground/80">Email Address</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="developer@layerzero.ai"
                 {...register('email')}
                 disabled={isLoading}
-                className="rounded-none"
+                className="rounded-lg"
               />
               {errors.email && (
-                <p className="text-sm text-foreground/90 font-medium pl-2 border-l border-foreground mt-1">
+                <p className="text-sm text-red-600 font-medium pl-2 border-l-2 border-red-600 mt-1">
                   {errors.email.message}
                 </p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-xs uppercase tracking-wider font-semibold text-foreground/80">Password</Label>
               <Input
                 id="password"
                 type="password"
                 {...register('password')}
                 disabled={isLoading}
-                className="rounded-none"
+                className="rounded-lg"
               />
               {errors.password && (
-                <p className="text-sm text-foreground/90 font-medium pl-2 border-l border-foreground mt-1">
+                <p className="text-sm text-red-600 font-medium pl-2 border-l-2 border-red-600 mt-1">
                   {errors.password.message}
                 </p>
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full rounded-none" disabled={isLoading}>
+          <CardFooter className="flex flex-col space-y-4 pt-2 text-left">
+            <Button type="submit" className="w-full rounded-full bg-primary text-primary-foreground hover:opacity-90" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Account
+              Get Started
             </Button>
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/login" className="text-primary hover:underline">
-                Login here
+              <Link to="/login" className="text-foreground font-medium hover:underline">
+                Sign in here
               </Link>
             </div>
           </CardFooter>

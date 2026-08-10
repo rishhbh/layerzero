@@ -12,10 +12,9 @@ import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { EmptyState } from '../components/EmptyState';
 import api from '../lib/api';
 import { toast } from 'sonner';
-import { Loader2, Globe } from 'lucide-react';
+import { Loader2, Globe, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { marked } from 'marked';
-import { Download } from 'lucide-react';
 
 const urlSchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL" }),
@@ -66,26 +65,26 @@ const UrlSummarizer: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-blur-fade-in">
+    <div className="space-y-8 animate-blur-fade-in font-sans">
       <div>
-        <h1 className="text-3xl font-heading font-bold tracking-tight mb-2">URL Summarizer</h1>
-        <p className="text-muted-foreground">Extract and summarize content from any web page.</p>
+        <h1 className="text-3xl md:text-4xl font-heading font-light tracking-tight text-foreground mb-2">URL Summarizer</h1>
+        <p className="text-muted-foreground text-base font-sans">Extract and summarize content from any web page.</p>
       </div>
 
-      <Card className="rounded-none">
-        <CardContent className="pt-6">
+      <Card className="rounded-2xl border-border bg-card">
+        <CardContent className="pt-6 md:pt-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="url">Website URL</Label>
+              <Label htmlFor="url" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Website URL</Label>
               <Input
                 id="url"
                 placeholder="https://example.com/article"
                 {...register('url')}
                 disabled={isLoading}
-                className="rounded-none"
+                className="rounded-lg"
               />
               {errors.url && (
-                <p className="text-sm text-foreground/90 font-medium pl-2 border-l border-foreground mt-1">
+                <p className="text-sm text-red-600 font-medium pl-2 border-l-2 border-red-600 mt-1">
                   {errors.url.message}
                 </p>
               )}
@@ -98,12 +97,12 @@ const UrlSummarizer: React.FC = () => {
               disabled={isLoading}
             />
             {errors.client && (
-              <p className="text-sm text-foreground/90 font-medium pl-2 border-l border-foreground mt-1">
+              <p className="text-sm text-red-600 font-medium pl-2 border-l-2 border-red-600 mt-1">
                 {errors.client.message}
               </p>
             )}
 
-            <Button type="submit" disabled={isLoading} className="w-full md:w-auto rounded-none">
+            <Button type="submit" disabled={isLoading} className="w-full md:w-auto rounded-full bg-primary text-primary-foreground hover:opacity-90">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Generate Summary
             </Button>
@@ -112,17 +111,19 @@ const UrlSummarizer: React.FC = () => {
       </Card>
 
       <div className="mt-8">
-        <div className='flex flex-row justify-between items-center mb-4'>
-          <h2 className="text-xl font-heading font-bold">Response</h2>
-          <Button
-            className='rounded-none px-3 py-2 font-heading font-medium cursor-pointer bg-primary text-primary-foreground flex gap-2 hover:opacity-90 transition-opacity'
-            onClick={() => summary && downloadSummary(summary)}
-          >
-            <Download size={20} />Export
-          </Button>
+        <div className="flex flex-row justify-between items-center mb-4">
+          <h2 className="text-2xl font-heading font-light text-foreground">Response</h2>
+          {summary && (
+            <Button
+              className="rounded-full px-4 py-2 font-sans font-medium cursor-pointer bg-primary text-primary-foreground flex gap-2 hover:opacity-90 transition-colors"
+              onClick={() => summary && downloadSummary(summary)}
+            >
+              <Download size={18} /> Export PDF
+            </Button>
+          )}
         </div>
-        <Card className="rounded-none">
-          <CardContent className="pt-6">
+        <Card className="rounded-2xl border-border bg-card">
+          <CardContent className="pt-6 md:pt-8">
             {isLoading ? (
               <LoadingSkeleton rows={5} />
             ) : summary ? (
@@ -131,7 +132,7 @@ const UrlSummarizer: React.FC = () => {
               <EmptyState
                 title="No summary generated"
                 description="Enter a URL and select a model to generate a summary."
-                icon={<Globe className="h-6 w-6" />}
+                icon={<Globe className="h-6 w-6 text-muted-foreground" />}
               />
             )}
           </CardContent>

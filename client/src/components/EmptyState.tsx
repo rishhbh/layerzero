@@ -9,12 +9,12 @@ interface EmptyStateProps {
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ title, description, icon }) => {
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center border border-border border-dashed rounded-none bg-card/50">
-      <div className="h-12 w-12 rounded-none bg-primary/10 flex items-center justify-center text-primary mb-4">
+    <div className="flex flex-col items-center justify-center p-8 md:p-12 text-center border border-border border-dashed rounded-2xl bg-card">
+      <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center text-foreground mb-4">
         {icon || <Layers className="h-6 w-6" />}
       </div>
-      <h3 className="text-lg font-heading font-medium text-foreground">{title}</h3>
-      <p className="text-sm text-muted-foreground mt-2 max-w-sm">{description}</p>
+      <h3 className="text-xl font-heading font-light text-foreground">{title}</h3>
+      <p className="text-sm text-muted-foreground mt-2 max-w-sm font-sans">{description}</p>
     </div>
   );
 };

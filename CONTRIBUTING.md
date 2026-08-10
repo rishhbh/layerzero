@@ -1,6 +1,6 @@
-# Contributing to LayerZero
+# Contributing to Layerzero
 
-Thanks for checking out LayerZero! This is an actively maintained personal project, and contributions, bug reports, and suggestions are welcome.
+Thanks for checking out Layerzero! This is an actively maintained personal project, and contributions, bug reports, and suggestions are welcome.
 
 ## Tech Stack
 

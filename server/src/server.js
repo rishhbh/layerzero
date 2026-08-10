@@ -6,7 +6,7 @@ import connectDatabase from "./config/db.js";
 
 const PORT = process.env.PORT || 3000;
 
-if (NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test') {
   await connectDatabase();
 }
 

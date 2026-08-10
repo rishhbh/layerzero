@@ -43,8 +43,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, accept = "
   return (
     <div
       className={cn(
-        "relative border-2 border-dashed rounded-none p-8 text-center transition-colors cursor-pointer",
-        isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50",
+        "relative border border-dashed rounded-2xl p-8 md:p-12 text-center transition-all cursor-pointer bg-card",
+        isDragging ? "border-foreground bg-secondary" : "border-input hover:border-foreground hover:bg-muted",
         className
       )}
       onDragOver={handleDragOver}
@@ -61,8 +61,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, accept = "
       />
       
       <div className="flex flex-col items-center justify-center space-y-4">
-        <div className={cn("p-4 rounded-none", selectedFile ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground")}>
-          {selectedFile ? <File className="w-8 h-8" /> : <Upload className="w-8 h-8" />}
+        <div className={cn("p-4 rounded-full transition-colors", selectedFile ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>
+          {selectedFile ? <File className="w-6 h-6" /> : <Upload className="w-6 h-6" />}
         </div>
         <div>
           {selectedFile ? (
@@ -72,7 +72,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, accept = "
             </>
           ) : (
             <>
-              <p className="text-sm font-medium text-foreground">Click to upload or drag and drop</p>
+              <p className="text-sm font-medium text-foreground">Click to upload or drag and drop document</p>
               <p className="text-xs text-muted-foreground mt-1">PDF, DOCX up to 10MB</p>
             </>
           )}
