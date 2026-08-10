@@ -12,7 +12,7 @@ on:
 
 jobs:
   test:
-    name: Run Tests
+    name: Run Tests [Health Check & Authentication]
     runs-on: ubuntu-latest
 
     defaults:
