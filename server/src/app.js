@@ -35,7 +35,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
-  return res.status(201).json({
+  return res.status(200).json({
     status: "OK",
     message: "API is working properly",
     uptime: Math.floor(process.uptime()),

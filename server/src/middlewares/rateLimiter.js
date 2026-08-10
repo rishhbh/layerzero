@@ -1,4 +1,8 @@
 export const rateLimit = (limiter) => async (req, res, next) => {
+    if (process.env.NODE_ENV === 'test') {
+        return next();
+    }
+
     const identifier = req.user?.id ?? req.ip;
 
     const { success } = await limiter.limit(identifier);

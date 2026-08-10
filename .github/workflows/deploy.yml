@@ -1,22 +1,49 @@
-name: CD - Deploy Server to AWS EC2
+name: CI/CD - Deploy Server to AWS EC2
 
 on:
   push:
     branches: [dev]
     paths:
-      - '.github/workflows/deploy.yml'
-      - 'server/**'
-      - 'docker-compose.yml'
-      - 'docker-compose.*.yml'
-      - 'server/Dockerfile'
+      - ".github/workflows/deploy.yml"
+      - "server/**"
+      - "docker-compose.yml"
+      - "docker-compose.*.yml"
+      - "server/Dockerfile"
 
 jobs:
-  deploy:
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: server
+
     steps:
-      - uses: actions/checkout@v3
-      - name: SSH into AWS EC2 and Deploy
-        uses: appleboy/ssh-action@master
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    name: Deploy to EC2
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}

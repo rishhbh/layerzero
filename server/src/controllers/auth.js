@@ -33,7 +33,7 @@ export const registerUser = async (req, res, next) => {
     });
 
     generateToken(newUser._id, res);
-    res.status(200).json({
+    res.status(201).json({
       _id: newUser._id,
       name: newUser.name,
       email: newUser.email,
