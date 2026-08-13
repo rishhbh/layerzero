@@ -14,10 +14,10 @@ Layerzero takes a different approach.
 
 Users can choose between:
 
-* **Gemini 2.5 Flash** for powerful cloud-based inference
+* **Gemini 3.5 Flash** for powerful cloud-based inference
 * **GPT OSS 120B via Cerebras** for fast, open-source cloud inference
-* **Gemma 4 via Ollama** for local inference and privacy-focused workflows* 
-* **Sarvam 30B** for Hinglish and multilingual conversational workflows*
+* **Gemma 4 via Ollama** for local inference and privacy-focused workflows
+* **Sarvam 30B** for Hinglish and multilingual conversational workflows
 
 Whether you're summarizing a research paper, technical documentation, blog post, or an article you definitely intended to read later, Layerzero extracts the content and generates concise summaries within seconds.
 
@@ -83,7 +83,7 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 ### AI-Powered Summarization & Streaming
 
 * Real-Time Token Streaming (Server-Sent Events / SSE)
-* Gemini 2.5 Flash integration
+* Gemini 3.5 Flash integration
 * GPT OSS 120B integration via Cerebras
 * Gemma 4 integration via Ollama
 * Sarvam 30B integration
@@ -305,7 +305,7 @@ pdfjs-dist mammoth
 
 ### AI Models
 
-* Gemini 2.5 Flash
+* Gemini 3.5 Flash
 * GPT OSS 120B (via Cerebras)
 * Gemma 4 (via Ollama)
 * Sarvam 30B

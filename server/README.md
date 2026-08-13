@@ -469,7 +469,7 @@ handleError middleware
 ## AI Clients
 
 ### Gemini
-Uses `@google/genai` SDK with `gemini-2.5-flash`. Supports streaming (`streamGemini`).
+Uses `@google/genai` SDK with `gemini-3.5-flash`. Supports streaming (`streamGemini`).
 
 ### Cerebras
 Uses `@cerebras/cerebras_cloud_sdk` with `gpt-oss-120b` for fast cloud inference. Supports streaming (`streamCerebras`).
