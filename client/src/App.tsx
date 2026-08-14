@@ -12,6 +12,9 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerificationSent from './pages/VerificationSent';
+import EmailVerified from './pages/EmailVerified';
+import ResendVerification from './pages/ResendVerification';
 import UrlSummarizer from './pages/UrlSummarizer';
 import DocSummarizer from './pages/DocSummarizer';
 
@@ -28,6 +31,10 @@ function App() {
               <Route element={<PublicRoute />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/verification-sent" element={<VerificationSent />} />
+                <Route path="/email-verified" element={<EmailVerified />} />
+                <Route path="/verify-email/:token" element={<EmailVerified />} />
+                <Route path="/resend-verification" element={<ResendVerification />} />
               </Route>
             </Route>
             

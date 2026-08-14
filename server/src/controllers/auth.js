@@ -130,10 +130,9 @@ export const verifyEmail = async (req, res, next) => {
 
     await user.save();
 
-    return res.status(200).json({
-      success: true,
-      message: "Email verified successfully"
-    });
+    return res.redirect(
+      `${process.env.CLIENT_URL}/email-verified`
+    );
 
   } catch (err) {
     next(err);
