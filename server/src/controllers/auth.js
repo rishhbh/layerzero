@@ -38,9 +38,11 @@ export const registerUser = async (req, res, next) => {
       verificationTokenExpires: Date.now() + 15 * 60 * 1000
     });
 
-    await sendVerificationEmail(newUser.email, verificationToken);
+    if (process.env.NODE_ENV !== 'test') {
+      await sendVerificationEmail(newUser.email, verificationToken);
+    }
 
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
       message: "You're registered, now verify email"
     });
