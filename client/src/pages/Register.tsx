@@ -32,8 +32,8 @@ const Register: React.FC = () => {
     setIsLoading(true);
     try {
       await registerUser(data);
-      toast.success("Account created successfully");
-      navigate('/dashboard/url');
+      toast.success("Account registered! Please check your email to verify.");
+      navigate('/verification-sent', { state: { email: data.email } });
     } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
       if (error.response?.data?.errors) {
         const backendErrors = error.response.data.errors;

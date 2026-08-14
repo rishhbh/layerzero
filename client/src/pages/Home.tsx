@@ -156,7 +156,7 @@ const Home: React.FC = () => {
             />
             <FeatureCard 
               icon={<Layers className="h-5 w-5 text-foreground" />}
-              title="Gemini 2.5 Flash"
+              title="Gemini 3.5 Flash"
               description="Cloud model optimized for deep context synthesis across extensive multi-page documents."
               delayClass="delay-150"
             />

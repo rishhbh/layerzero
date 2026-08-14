@@ -14,10 +14,10 @@ Layerzero takes a different approach.
 
 Users can choose between:
 
-* **Gemini 2.5 Flash** for powerful cloud-based inference
+* **Gemini 3.5 Flash** for powerful cloud-based inference
 * **GPT OSS 120B via Cerebras** for fast, open-source cloud inference
-* **Gemma 4 via Ollama** for local inference and privacy-focused workflows* 
-* **Sarvam 30B** for Hinglish and multilingual conversational workflows*
+* **Gemma 4 via Ollama** for local inference and privacy-focused workflows
+* **Sarvam 30B** for Hinglish and multilingual conversational workflows
 
 Whether you're summarizing a research paper, technical documentation, blog post, or an article you definitely intended to read later, Layerzero extracts the content and generates concise summaries within seconds.
 
@@ -83,7 +83,7 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 ### AI-Powered Summarization & Streaming
 
 * Real-Time Token Streaming (Server-Sent Events / SSE)
-* Gemini 2.5 Flash integration
+* Gemini 3.5 Flash integration
 * GPT OSS 120B integration via Cerebras
 * Gemma 4 integration via Ollama
 * Sarvam 30B integration
@@ -95,11 +95,12 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 ### Authentication & Security
 
 * JWT Authentication via httpOnly cookies
+* Email verification flow with Nodemailer (`POST /api/auth/user/resend`, `GET /api/auth/user/verify/:token`)
 * Protected API routes
 * Strict payload validation using Zod schemas
 * Secure password hashing with bcrypt
 * Middleware-based authorization
-* Custom Upstash Redis sliding window rate limiting (`@upstash/ratelimit`) on auth and LLM routes
+* Custom Upstash Redis sliding window rate limiting (`@upstash/ratelimit`) on auth, email resend, and LLM routes
 
 ### Testing & Reliability
 
@@ -305,7 +306,7 @@ pdfjs-dist mammoth
 
 ### AI Models
 
-* Gemini 2.5 Flash
+* Gemini 3.5 Flash
 * GPT OSS 120B (via Cerebras)
 * Gemma 4 (via Ollama)
 * Sarvam 30B
@@ -321,25 +322,42 @@ pdfjs-dist mammoth
 ```http
 POST /api/auth/user/register
 ```
-*Returns `201 Created` with user object and sets `jwt` httpOnly cookie.*
+*Registers a new user and sends an email verification link. Returns `201 Created`.*
+
+#### Verify Email
+
+```http
+GET /api/auth/user/verify/:token
+```
+*Verifies user email using the verification token sent via email.*
+
+#### Resend Verification Email
+
+```http
+POST /api/auth/user/resend
+```
+*Resends the verification email link to the specified email address. Rate limited to 3 requests per 24 hours.*
 
 #### Login
 
 ```http
 POST /api/auth/user/login
 ```
+*Authenticates verified users and sets `jwt` httpOnly cookie.*
 
 #### Logout
 
 ```http
 POST /api/auth/user/logout
 ```
+*Clears the `jwt` cookie.*
 
 #### Check Authentication
 
 ```http
 GET /api/auth/user/check
 ```
+*Returns the currently authenticated user profile.*
 
 ---
 

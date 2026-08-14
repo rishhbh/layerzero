@@ -7,11 +7,21 @@ export interface User {
   email: string;
 }
 
+export interface AuthResponse {
+  success?: boolean;
+  message?: string;
+  user?: User;
+  _id?: string;
+  name?: string;
+  email?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (data: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => Promise<void>;
-  register: (data: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => Promise<void>;
+  register: (data: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => Promise<AuthResponse>;
+  resendVerification: (email: string) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   checkUser: () => Promise<void>;
 }
@@ -46,7 +56,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (data: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => {
     const res = await api.post('/auth/user/register', data);
-    setUser(res.data.user || res.data);
+    return res.data;
+  };
+
+  const resendVerification = async (email: string) => {
+    const res = await api.post('/auth/user/resend', { email });
+    return res.data;
   };
 
   const logout = async () => {
@@ -55,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, checkUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, resendVerification, logout, checkUser }}>
       {children}
     </AuthContext.Provider>
   );

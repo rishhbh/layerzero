@@ -22,6 +22,7 @@ const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
   const { register, handleSubmit, setError, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema)
@@ -29,12 +30,16 @@ const Login: React.FC = () => {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
+    setUnverifiedEmail(null);
     try {
       await login(data);
       toast.success("Logged in successfully");
       navigate('/dashboard/url');
     } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
-      if (error.response?.data?.errors) {
+      if (error.response?.status === 403 || error.response?.data?.message?.includes("Verify your email")) {
+        setUnverifiedEmail(data.email);
+        toast.error("Please verify your email address before logging in.");
+      } else if (error.response?.data?.errors) {
         const backendErrors = error.response.data.errors;
         Object.keys(backendErrors).forEach((key) => {
           setError(key as any /* eslint-disable-line @typescript-eslint/no-explicit-any */, {
@@ -62,6 +67,19 @@ const Login: React.FC = () => {
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-5 pt-4 text-left">
+            {unverifiedEmail && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 text-xs text-amber-600 dark:text-amber-400 space-y-2">
+                <p className="font-semibold">Email Verification Required</p>
+                <p>Your email address is not verified yet. Please check your inbox or resend the verification link.</p>
+                <Link
+                  to="/resend-verification"
+                  state={{ email: unverifiedEmail }}
+                  className="inline-block font-bold underline hover:opacity-80"
+                >
+                  Resend Verification Email →
+                </Link>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-xs uppercase tracking-wider font-semibold text-foreground/80">Email Address</Label>
               <Input
@@ -101,10 +119,15 @@ const Login: React.FC = () => {
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            <div className="text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link to="/register" className="text-foreground font-medium hover:underline">
-                Create account
+            <div className="flex items-center justify-between w-full text-sm text-muted-foreground">
+              <div>
+                Don't have an account?{" "}
+                <Link to="/register" className="text-foreground font-medium hover:underline">
+                  Create account
+                </Link>
+              </div>
+              <Link to="/resend-verification" className="text-xs text-primary hover:underline font-medium">
+                Resend email?
               </Link>
             </div>
           </CardFooter>

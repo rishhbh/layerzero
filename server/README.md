@@ -53,7 +53,7 @@ server/
     │       ├── sarvamClient.js
     │       └── streamingClients.js
     ├── controllers/
-    │   ├── auth.js         # registerUser, loginUser, logout, checkUser
+    │   ├── auth.js         # registerUser, loginUser, logout, verifyEmail, resendVerification, checkUser
     │   ├── docSummary.js   # Document upload → parse → summarize/stream
     │   └── scrape.js       # URL scrape → readability → summarize/stream
     ├── middlewares/
@@ -106,7 +106,8 @@ UPSTASH_REDIS_REST_TOKEN=
 
 Layerzero implements custom sliding window rate limiting powered by `@upstash/ratelimit` and Upstash Redis.
 
-- **Auth Limiter (`authLimiter`)**: 20 requests per 10-minute window (applied to `/api/auth/*`).
+- **Auth Limiter (`authLimiter`)**: 20 requests per 10-minute window (applied to auth endpoints such as `/register`, `/login`, `/check`, and `/verify/:token`).
+- **Resend Limiter (`resendLimiter`)**: 3 requests per 24-hour window (applied to `/api/auth/user/resend`).
 - **AI Limiter (`aiLimiter`)**: 30 requests per 15-minute window (applied to `/api/scrape/*`).
 - Identifies requests by `req.user.id` (if authenticated) or `req.ip`.
 - Bypassed automatically when `NODE_ENV === 'test'`.
@@ -136,13 +137,13 @@ Returns the current health status of the API.
 
 ### Auth — `/api/auth`
 
-All auth routes are public (no token required) and are protected by rate limiting.
+All auth routes are public (no token required, except `GET /check` which requires JWT cookie) and are protected by rate limiting (`authLimiter` / `resendLimiter`).
 
 ---
 
 #### `POST /api/auth/user/register`
 
-Registers a new user and sets a JWT cookie.
+Registers a new user, hashes password, creates a 15-minute verification token, and sends an email verification link via Nodemailer.
 
 **Request Body (`application/json`)**
 | Field | Type | Required | Description |
@@ -154,12 +155,10 @@ Registers a new user and sets a JWT cookie.
 **Response `201 Created`**
 ```json
 {
-  "_id": "user_id",
-  "name": "Rishabh",
-  "email": "rishabh@example.com"
+  "success": true,
+  "message": "You're registered, now verify email"
 }
 ```
-*Note: Sets `jwt` httpOnly cookie (7d expiry).*
 
 **Error Responses**
 - `400 Bad Request`: If validation fails (e.g., invalid email format, weak password).
@@ -179,9 +178,67 @@ Registers a new user and sets a JWT cookie.
 
 ---
 
+#### `GET /api/auth/user/verify/:token`
+
+Verifies a user's email using the hex verification token sent via email. Sets `isVerified = true` and removes the verification token.
+
+**URL Parameters**
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `token` | string | Yes | The hex verification token sent in the email link |
+
+**Response `302 Found` (Redirect)**
+Redirects the user to `${process.env.CLIENT_URL}/email-verified` upon successful email verification.
+
+**Error Responses**
+- `400 Bad Request`: If the verification token is invalid or expired (exceeds 15 mins).
+  ```json
+  {
+    "success": false,
+    "message": "Invalid or expired verification token"
+  }
+  ```
+
+---
+
+#### `POST /api/auth/user/resend`
+
+Resends the email verification token if the user is registered but not yet verified. Rate limited to 3 requests per 24 hours (`resendLimiter`).
+
+**Request Body (`application/json`)**
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `email` | string | Yes | Registered email address to receive new verification link |
+
+**Response `200 OK`**
+```json
+{
+  "success": true,
+  "message": "Verification sent to your email successfully"
+}
+```
+
+**Error Responses**
+- `404 Not Found`: If no user exists with the provided email.
+  ```json
+  {
+    "success": false,
+    "message": "User not found"
+  }
+  ```
+- `400 Bad Request`: If the user is already verified.
+  ```json
+  {
+    "success": false,
+    "message": "User is already verified"
+  }
+  ```
+
+---
+
 #### `POST /api/auth/user/login`
 
-Authenticates an existing user and sets a JWT cookie.
+Authenticates an existing verified user and sets a JWT cookie.
 
 **Request Body (`application/json`)**
 | Field | Type | Required | Description |
@@ -200,11 +257,17 @@ Authenticates an existing user and sets a JWT cookie.
 *Note: Sets `jwt` httpOnly cookie (7d expiry).*
 
 **Error Responses**
-- `400 Bad Request`: If validation fails.
-- `400 Bad Request`: If invalid credentials are provided.
+- `400 Bad Request`: If validation fails or invalid credentials are provided.
   ```json
   {
     "message": "Invalid username or password"
+  }
+  ```
+- `403 Forbidden`: If user email has not been verified yet.
+  ```json
+  {
+    "success": true,
+    "message": "Verify your email first"
   }
   ```
 
@@ -358,24 +421,29 @@ npm test
 ```
 Client
   │
-  ├─ POST /register or /login
+  ├─ POST /user/register
   │       │
   │       ▼
-  │   Validate fields (Zod)
-  │       │
-  │       ▼
-  │   Hash password (bcrypt, salt 10)   ← register only
-  │       │
-  │       ▼
-  │   Create / find user in MongoDB
-  │       │
-  │       ▼
-  │   generateToken() → JWT (7d)
-  │       │
-  │       ▼
-  │   Set httpOnly cookie + return user object (201 for register, 200 for login)
+  │   Validate (Zod) → Hash password → Generate token (15m expiry) → Send email → 201 Created
   │
-  └─ GET /check → reads req.user (set by protectRoute)
+  ├─ GET /user/verify/:token
+  │       │
+  │       ▼
+  │   Verify token & expiry → Set isVerified = true → Clear token → 200 OK
+  │
+  ├─ POST /user/resend
+  │       │
+  │       ▼
+  │   Generate new token → Send email → 200 OK (rate limited to 3 req / 24h)
+  │
+  ├─ POST /user/login
+  │       │
+  │       ▼
+  │   Validate (Zod) → Compare password → Check isVerified (403 if false) → generateToken() → Set JWT cookie → 200 OK
+  │
+  ├─ POST /user/logout → Clear JWT cookie (maxAge: 0) → 200 OK
+  │
+  └─ GET /user/check → protectRoute → returns req.user (200 OK)
 ```
 
 ### protectRoute Middleware Flow
@@ -469,7 +537,7 @@ handleError middleware
 ## AI Clients
 
 ### Gemini
-Uses `@google/genai` SDK with `gemini-2.5-flash`. Supports streaming (`streamGemini`).
+Uses `@google/genai` SDK with `gemini-3.5-flash`. Supports streaming (`streamGemini`).
 
 ### Cerebras
 Uses `@cerebras/cerebras_cloud_sdk` with `gpt-oss-120b` for fast cloud inference. Supports streaming (`streamCerebras`).
