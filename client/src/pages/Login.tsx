@@ -60,13 +60,13 @@ const Login: React.FC = () => {
       <div className="gradient-orb gradient-orb-peach w-[350px] h-[350px] top-[10%] left-[10%] -z-0" />
       <div className="gradient-orb gradient-orb-sky w-[350px] h-[350px] bottom-[10%] right-[10%] -z-0" />
 
-      <Card className="w-full max-w-md rounded-2xl border-border bg-card relative z-10 p-2 md:p-4">
-        <CardHeader className="text-left pb-2">
-          <CardTitle className="text-3xl font-heading font-light text-foreground">Welcome back</CardTitle>
-          <CardDescription className="text-muted-foreground text-sm">Enter your credentials to access layerzero</CardDescription>
+      <Card className="w-full max-w-md rounded-2xl border border-border bg-card/90 backdrop-blur-md relative z-10 shadow-xl">
+        <CardHeader className="text-left pb-2 px-6 pt-6 md:px-8 md:pt-8">
+          <CardTitle className="text-2xl font-heading font-medium tracking-tight text-foreground">Welcome back</CardTitle>
+          <CardDescription className="text-muted-foreground text-sm mt-1">Enter your credentials to access layerzero</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-5 pt-4 text-left">
+          <CardContent className="space-y-4 px-6 md:px-8 py-3 text-left">
             {unverifiedEmail && (
               <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 text-xs text-amber-600 dark:text-amber-400 space-y-2">
                 <p className="font-semibold">Email Verification Required</p>
@@ -80,7 +80,7 @@ const Login: React.FC = () => {
                 </Link>
               </div>
             )}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="email" className="text-xs uppercase tracking-wider font-semibold text-foreground/80">Email Address</Label>
               <Input
                 id="email"
@@ -88,7 +88,7 @@ const Login: React.FC = () => {
                 placeholder="developer@layerzero.ai"
                 {...register('email')}
                 disabled={isLoading}
-                className="rounded-lg"
+                className="rounded-lg h-10"
               />
               {errors.email && (
                 <p className="text-sm text-red-600 font-medium pl-2 border-l-2 border-red-600 mt-1">
@@ -96,16 +96,19 @@ const Login: React.FC = () => {
                 </p>
               )}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-xs uppercase tracking-wider font-semibold text-foreground/80">Password</Label>
+                <Link to="/resend-verification" className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium">
+                  Resend email?
+                </Link>
               </div>
               <Input
                 id="password"
                 type="password"
                 {...register('password')}
                 disabled={isLoading}
-                className="rounded-lg"
+                className="rounded-lg h-10"
               />
               {errors.password && (
                 <p className="text-sm text-red-600 font-medium pl-2 border-l-2 border-red-600 mt-1">
@@ -114,20 +117,15 @@ const Login: React.FC = () => {
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4 pt-2 text-left">
-            <Button type="submit" className="w-full rounded-full bg-primary text-primary-foreground hover:opacity-90" disabled={isLoading}>
+          <CardFooter className="flex flex-col space-y-3 px-6 pb-6 md:px-8 md:pb-8 pt-2 text-center">
+            <Button type="submit" className="w-full rounded-full bg-primary text-primary-foreground hover:opacity-90 h-10 font-medium" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            <div className="flex items-center justify-between w-full text-sm text-muted-foreground">
-              <div>
-                Don't have an account?{" "}
-                <Link to="/register" className="text-foreground font-medium hover:underline">
-                  Create account
-                </Link>
-              </div>
-              <Link to="/resend-verification" className="text-xs text-primary hover:underline font-medium">
-                Resend email?
+            <div className="pt-1 text-center text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Link to="/register" className="text-foreground font-semibold hover:text-primary transition-colors hover:underline">
+                Create account →
               </Link>
             </div>
           </CardFooter>
