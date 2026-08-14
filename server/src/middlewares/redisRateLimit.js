@@ -8,6 +8,13 @@ const authLimiter = new Ratelimit({
     analytics: true,
 });
 
+const resendLimiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(3, "24h"),
+    prefix: "auth",
+    analytics: true,
+});
+
 const aiLimiter = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(30, "15m"),
@@ -15,4 +22,4 @@ const aiLimiter = new Ratelimit({
     prefix: "ai",
 });
 
-export { authLimiter, aiLimiter };
+export { authLimiter, aiLimiter, resendLimiter };

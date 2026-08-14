@@ -32,7 +32,9 @@
     "mongoose": "^9.6.2",
     "morgan": "^1.11.0",
     "multer": "^2.1.1",
+    "nodemailer": "^9.0.5",
     "pdfjs-dist": "^6.2.108",
+    "resend": "^6.19.0",
     "sarvamai": "^1.1.7",
     "zod": "^4.4.3"
   },
