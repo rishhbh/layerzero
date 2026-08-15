@@ -13,7 +13,7 @@ Express.js + MongoDB backend for Layerzero. Handles JWT auth, multi-format conte
 | Server & Logging | `server.js` (HTTPS/HTTP), `morgan` ('dev') |
 | Database | MongoDB via Mongoose |
 | Caching & Rate Limit | Upstash Redis (`@upstash/redis` & `@upstash/ratelimit`) |
-| Auth | JWT in httpOnly cookies (`jsonwebtoken`, `bcrypt`) |
+| Auth & Email | JWT in httpOnly cookies (`jsonwebtoken`, `bcrypt`), Nodemailer (`nodemailer`) |
 | Validation | Zod (`auth.validator.js`, `summary.validator.js`) |
 | AI — Cloud | Gemini (`@google/genai`), Cerebras (`@cerebras/cerebras_cloud_sdk`), Sarvam (`sarvamai`) |
 | AI — Local | Gemma via Ollama (`/api/chat`) |
@@ -56,19 +56,24 @@ server/
     │   ├── auth.js         # registerUser, loginUser, logout, verifyEmail, resendVerification, checkUser
     │   ├── docSummary.js   # Document upload → parse → summarize/stream
     │   └── scrape.js       # URL scrape → readability → summarize/stream
+    ├── emails/
+    │   └── verificationEmail.js # HTML template generator for email verification
     ├── middlewares/
     │   ├── authMiddleware.js # protectRoute (JWT cookie verification)
     │   ├── errorHandler.js   # Global error handling middleware
     │   ├── rateLimiter.js    # Rate limiter middleware wrapper
     │   └── redisRateLimit.js # Upstash sliding window instances (auth & AI)
     ├── models/
+    │   ├── Chunk.js        # Document chunking schema
+    │   ├── Summary.js      # Summarization job schema
     │   └── User.js         # Mongoose User schema & password hashing
     ├── routes/
     │   ├── authRoute.js    # /api/auth/* endpoints
     │   └── ingestRoute.js  # /api/scrape/* endpoints
     ├── services/
     │   ├── document.js     # Mimetype document extraction router
-    │   └── multer.js       # Multer memory storage config (5MB max)
+    │   ├── multer.js       # Multer memory storage config (5MB max)
+    │   └── nodemailer.js   # Gmail email sending service
     ├── utils/
     │   ├── hashContent.js  # Content SHA-256 hash generator for cache keys
     │   └── streamResponse.js # SSE streaming & caching pipeline
@@ -85,6 +90,9 @@ Copy `.env.example` to `.env` and fill in the values.
 
 ```env
 PORT=
+HTTPS_PORT=
+SSL_KEY_PATH=
+SSL_CERT_PATH=
 MONGODB_URI=
 OLLAMA_MODEL=
 OLLAMA_BASE_URL=
@@ -94,6 +102,9 @@ SARVAM_API_KEY=
 JWT_SECRET=
 NODE_ENV=
 CLIENT_URL=
+API_URL=
+EMAIL_USER=
+EMAIL_APP_PASSWORD=
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 ```

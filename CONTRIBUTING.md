@@ -5,7 +5,7 @@ Thanks for checking out Layerzero! This is an actively maintained personal proje
 ## Tech Stack
 
 Before diving in, make sure you're familiar with:
-- **Backend:** Node.js / Express (TypeScript)
+- **Backend:** Node.js / Express (JavaScript ESM)
 - **Caching:** Redis (via Upstash)
 - **Deployment:** Docker + GitHub Actions CI/CD, AWS EC2
 - **Frontend:** Cloudflare Workers

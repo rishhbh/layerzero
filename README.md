@@ -442,6 +442,7 @@ Layerzero/
     │   ├── server.js
     │   ├── config/
     │   ├── controllers/
+    │   ├── emails/
     │   ├── middlewares/
     │   ├── models/
     │   ├── routes/
@@ -518,6 +519,9 @@ npm install
 
 ```env
 PORT=
+HTTPS_PORT=
+SSL_KEY_PATH=
+SSL_CERT_PATH=
 MONGODB_URI=
 OLLAMA_MODEL=
 OLLAMA_BASE_URL=
@@ -527,6 +531,9 @@ SARVAM_API_KEY=
 JWT_SECRET=
 NODE_ENV=
 CLIENT_URL=
+API_URL=
+EMAIL_USER=
+EMAIL_APP_PASSWORD=
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 ```
