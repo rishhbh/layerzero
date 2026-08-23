@@ -7,7 +7,7 @@ export const webSummarySchema = z.object({
         .url("Invalid URL"),
 
     client: z.enum(
-        ['gemini', 'cerebras', 'gemma', 'sarvam'],
+        ['gemini', 'groq', 'cerebras', 'gemma', 'sarvam'],
         {
             error: "Invalid client model",
         }

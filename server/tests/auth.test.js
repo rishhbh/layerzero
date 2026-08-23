@@ -1,6 +1,12 @@
 import request from 'supertest';
 import bcrypt from 'bcrypt';
-import { jest } from '@jest/globals';
+import {
+    describe,
+    test,
+    expect,
+    beforeEach,
+    mock
+} from "bun:test";
 
 let verificationToken;
 
@@ -8,10 +14,10 @@ beforeEach(() => {
     verificationToken = undefined;
 });
 
-jest.unstable_mockModule('../src/services/nodemailer.js', () => ({
-    sendVerificationEmail: jest.fn(async (email, token) => {
+mock.module("../src/services/nodemailer.js", () => ({
+    sendVerificationEmail: async (email, token) => {
         verificationToken = token;
-    })
+    }
 }));
 
 const { default: app } = await import('../src/app.js');

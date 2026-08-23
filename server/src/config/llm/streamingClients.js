@@ -2,7 +2,7 @@ import systemPrompt from "../systemPrompt.js";
 import sarvamSystemPrompt from "../sarvamSystemPrompt.js";
 
 import { GoogleGenAI } from "@google/genai";
-import Cerebras from "@cerebras/cerebras_cloud_sdk";
+import { Groq } from "groq-sdk";
 import { SarvamAIClient } from "sarvamai";
 
 import sarvamClient from "./sarvamClient.js";
@@ -11,8 +11,8 @@ const geminiAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-const cerebras = new Cerebras({
-  apiKey: process.env.CEREBRAS_API_KEY,
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 export async function* streamGemini(prompt) {
@@ -31,14 +31,19 @@ export async function* streamGemini(prompt) {
   }
 }
 
-export async function* streamCerebras(prompt) {
-  const stream = await cerebras.chat.completions.create({
-    model: "gpt-oss-120b",
+export async function* streamGroq(prompt) {
+  const stream = await groq.chat.completions.create({
+    model: "openai/gpt-oss-120b",
     stream: true,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
     ],
+    temperature: 1,
+    max_completion_tokens: 2048,
+    top_p: 1,
+    reasoning_effort: "medium",
+    stop: null,
   });
 
   for await (const chunk of stream) {
@@ -128,7 +133,7 @@ export async function* streamSarvam(prompt) {
 
 export const streamingModels = {
   gemini: streamGemini,
-  cerebras: streamCerebras,
+  groq: streamGroq,
   gemma: streamGemma,
   sarvam: streamSarvam,
 };

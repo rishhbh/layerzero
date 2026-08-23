@@ -15,7 +15,7 @@ Layerzero takes a different approach.
 Users can choose between:
 
 * **Gemini 3.5 Flash** for powerful cloud-based inference
-* **GPT OSS 120B via Cerebras** for fast, open-source cloud inference
+* **GPT OSS 120B via Groq** for fast, open-source cloud inference
 * **Gemma 4 via Ollama** for local inference and privacy-focused workflows
 * **Sarvam 30B** for Hinglish and multilingual conversational workflows
 
@@ -84,7 +84,7 @@ Whether you're summarizing a research paper, technical documentation, blog post,
 
 * Real-Time Token Streaming (Server-Sent Events / SSE)
 * Gemini 3.5 Flash integration
-* GPT OSS 120B integration via Cerebras
+* GPT OSS 120B integration via Groq
 * Gemma 4 integration via Ollama
 * Sarvam 30B integration
 * Four user-selectable AI models
@@ -206,7 +206,7 @@ Summary
 * JSDOM
 * Mozilla Readability
 * Gemini API
-* Cerebras API
+* Groq API
 * Gemma 4
 
 ---
@@ -244,7 +244,7 @@ pdfjs-dist mammoth
 * pdfjs-dist
 * mammoth
 * Gemini API
-* Cerebras API
+* Groq API
 * Gemma 4
 * Sarvam AI
 
@@ -307,7 +307,7 @@ pdfjs-dist mammoth
 ### AI Models
 
 * Gemini 3.5 Flash
-* GPT OSS 120B (via Cerebras)
+* GPT OSS 120B (via Groq)
 * Gemma 4 (via Ollama)
 * Sarvam 30B
 
@@ -384,7 +384,7 @@ Request Body
 `client` accepts:
 
 * `gemini`
-* `cerebras`
+* `groq`
 * `gemma`
 * `sarvam`
 
@@ -408,7 +408,7 @@ Fields
 
 ```text
 document: file.pdf or file.docx
-client: gemini or cerebras or gemma or sarvam
+client: gemini or groq or gemma or sarvam
 stream: true (optional)
 ```
 
@@ -526,7 +526,7 @@ MONGODB_URI=
 OLLAMA_MODEL=
 OLLAMA_BASE_URL=
 GEMINI_API_KEY=
-CEREBRAS_API_KEY=
+GROQ_API_KEY=
 SARVAM_API_KEY=
 JWT_SECRET=
 NODE_ENV=

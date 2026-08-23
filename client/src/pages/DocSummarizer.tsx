@@ -14,7 +14,7 @@ import { marked } from 'marked';
 
 const DocSummarizer: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [client, setClient] = useState<string>('cerebras');
+  const [client, setClient] = useState<string>('groq');
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 

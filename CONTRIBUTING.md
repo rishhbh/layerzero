@@ -9,7 +9,7 @@ Before diving in, make sure you're familiar with:
 - **Caching:** Redis (via Upstash)
 - **Deployment:** Docker + GitHub Actions CI/CD, AWS EC2
 - **Frontend:** Cloudflare Workers
-- **AI Models:** Gemini, Cerebras GPT-OSS-120B, Gemma, Sarvam 30B (routed via a shared model interface)
+- **AI Models:** Gemini, Groq GPT-OSS-120B, Gemma, Sarvam 30B (routed via a shared model interface)
 
 ## Getting Started
 

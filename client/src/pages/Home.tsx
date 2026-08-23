@@ -61,7 +61,7 @@ const Home: React.FC = () => {
               </h1>
               
               <p className="text-sm md:text-base text-muted-foreground max-w-xl mb-6 leading-relaxed font-sans">
-                Extract, process, and summarize complex content from web pages and documents using cloud models (Gemini, Cerebras), local privacy engines (Gemma), or native multilingual pipelines (Sarvam).
+                Extract, process, and summarize complex content from web pages and documents using cloud models (Gemini, Groq), local privacy engines (Gemma), or native multilingual pipelines (Sarvam).
               </p>
               
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full sm:w-auto mb-8">
@@ -107,7 +107,7 @@ const Home: React.FC = () => {
                 <div className="space-y-3 text-left">
                   <div className="p-3 rounded-xl bg-background border border-border">
                     <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block mb-0.5">Provider</span>
-                    <span className="text-xs font-heading font-medium text-foreground">Cerebras GPT-OSS-120B</span>
+                    <span className="text-xs font-heading font-medium text-foreground">Groq GPT-OSS-120B</span>
                   </div>
 
                   <div className="p-3 rounded-xl bg-background border border-border">
@@ -162,8 +162,8 @@ const Home: React.FC = () => {
             />
             <FeatureCard 
               icon={<Sparkles className="h-5 w-5 text-foreground" />}
-              title="Cerebras GPT-OSS-120B"
-              description="Ultra-fast 120B open weights inference delivering instant synthesis at hardware scale."
+              title="Groq GPT-OSS-120B"
+              description="Ultra-fast 120B open weights inference powered by Groq LPU hardware."
               delayClass="delay-200"
             />
             <FeatureCard 

@@ -1,6 +1,6 @@
 # Layerzero — Backend
 
-Express.js + MongoDB backend for Layerzero. Handles JWT auth, multi-format content ingestion (PDF, DOCX, URL), and hybrid AI summarization routing between Gemini, Cerebras, Sarvam AI, and Gemma via Ollama. Features real-time SSE response streaming, custom Upstash Redis rate limiting, intelligent cache deduplication, and an automated Jest testing suite.
+Express.js + MongoDB backend for Layerzero. Handles JWT auth, multi-format content ingestion (PDF, DOCX, URL), and hybrid AI summarization routing between Gemini, Groq, Sarvam AI, and Gemma via Ollama. Features real-time SSE response streaming, custom Upstash Redis rate limiting, intelligent cache deduplication, and an automated Bun testing suite.
 
 ---
 
@@ -8,19 +8,19 @@ Express.js + MongoDB backend for Layerzero. Handles JWT auth, multi-format conte
 
 | Layer | Tech |
 |---|---|
-| Runtime | Node.js (ESM, v22-alpine in Docker) |
+| Runtime | Bun (ESM, oven/bun:1-alpine in Docker) |
 | Framework | Express.js v5 |
 | Server & Logging | `server.js` (HTTPS/HTTP), `morgan` ('dev') |
 | Database | MongoDB via Mongoose |
 | Caching & Rate Limit | Upstash Redis (`@upstash/redis` & `@upstash/ratelimit`) |
 | Auth & Email | JWT in httpOnly cookies (`jsonwebtoken`, `bcrypt`), Nodemailer (`nodemailer`) |
 | Validation | Zod (`auth.validator.js`, `summary.validator.js`) |
-| AI — Cloud | Gemini (`@google/genai`), Cerebras (`@cerebras/cerebras_cloud_sdk`), Sarvam (`sarvamai`) |
+| AI — Cloud | Gemini (`@google/genai`), Groq (`groq-sdk`), Sarvam (`sarvamai`) |
 | AI — Local | Gemma via Ollama (`/api/chat`) |
 | Streaming | Server-Sent Events (`text/event-stream`) |
 | File Parsing | `pdfjs-dist` (for PDF), `mammoth` (for DOCX), `multer` (memory storage) |
 | Web Scraping | `axios` + `jsdom` + `@mozilla/readability` |
-| Testing | Jest, Supertest, `mongodb-memory-server` |
+| Testing | Bun Test (native), Supertest, `mongodb-memory-server` |
 
 ---
 
@@ -28,9 +28,9 @@ Express.js + MongoDB backend for Layerzero. Handles JWT auth, multi-format conte
 
 ```
 server/
-├── Dockerfile              # Docker container instructions
-├── jest.config.js          # Jest configuration for ESM
-├── package.json            # NPM scripts & dependencies
+├── bunfig.toml          # Bun configuration (test preload)
+├── Dockerfile              # Docker container instructions (oven/bun:1-alpine)
+├── package.json            # Scripts & dependencies (bun.lock)
 ├── tests/
 │   ├── setup.js            # In-memory MongoDB lifecycle hooks
 │   ├── auth.test.js        # Auth endpoint unit/integration tests
@@ -47,7 +47,7 @@ server/
     │   ├── sarvamSystemPrompt.js # Sarvam AI Hinglish system prompt
     │   ├── systemPrompt.js # Layerzero default system prompt
     │   └── llm/            # AI Client wrappers (standard & streaming)
-    │       ├── cerebrasClient.js
+    │       ├── groqClient.js
     │       ├── geminiClient.js
     │       ├── gemmaClient.js
     │       ├── sarvamClient.js
@@ -97,7 +97,7 @@ MONGODB_URI=
 OLLAMA_MODEL=
 OLLAMA_BASE_URL=
 GEMINI_API_KEY=
-CEREBRAS_API_KEY=
+GROQ_API_KEY=
 SARVAM_API_KEY=
 JWT_SECRET=
 NODE_ENV=
@@ -330,7 +330,7 @@ Scrapes a URL, extracts readable content via Readability, and summarizes it usin
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `url` | string | Yes | A valid URL to scrape |
-| `client` | string | Yes | The AI model to use (`"gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"`) |
+| `client` | string | Yes | The AI model to use (`"gemini"`, `"gemma"`, `"groq"`, `"cerebras"`, or `"sarvam"`) |
 | `stream` | boolean | No | Set to `true` to enable SSE streaming response |
 
 **Query Parameters**
@@ -378,7 +378,7 @@ Accepts a Document file upload (PDF/DOCX), extracts text, and summarizes it usin
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `document` | File | Yes | PDF or DOCX file (max 5MB) |
-| `client` | string | Yes | The AI model to use (`"gemini"`, `"gemma"`, `"cerebras"`, or `"sarvam"`) |
+| `client` | string | Yes | The AI model to use (`"gemini"`, `"gemma"`, `"groq"`, `"cerebras"`, or `"sarvam"`) |
 | `stream` | boolean/string | No | Set to `true` or `"true"` to enable SSE streaming |
 
 **Response `200 OK` (Standard JSON)**
@@ -412,11 +412,11 @@ data: {"summary":"Full summary text..."}
 
 ## Automated Testing
 
-The backend includes a unit and integration test suite using Jest, Supertest, and `mongodb-memory-server`.
+The backend includes a unit and integration test suite using Bun Test (`bun test`), Supertest, and `mongodb-memory-server`.
 
 ```bash
 cd server
-npm test
+bun test
 ```
 
 - **Environment**: Configured via `.env.test`.
@@ -499,7 +499,7 @@ Hash content → Check Redis cache → Return if exists (JSON or stream)
 Document Service → raw text string (pdfjs-dist / mammoth)
   │
   ▼
-model = models[req.body.client]  (gemini | gemma | cerebras | sarvam)
+model = models[req.body.client]  (gemini | gemma | groq | sarvam)
   │
   ├─ Standard → model(text) → summary string → Cache in Redis → res.json({ summary })
   └─ Streaming → streamAndCache() → SSE chunks → Cache in Redis → event: done
@@ -525,7 +525,7 @@ JSDOM + Readability → article.textContent
   ├─ Unreadable page → 400
   │
   ▼
-model = models[req.body.client]  (gemini | gemma | cerebras | sarvam)
+model = models[req.body.client]  (gemini | gemma | groq | sarvam)
   │
   ├─ Standard → model(textContent) → summary string → Cache in Redis → res.json({ output })
   └─ Streaming → streamAndCache() → SSE chunks → Cache in Redis → event: done
@@ -550,8 +550,8 @@ handleError middleware
 ### Gemini
 Uses `@google/genai` SDK with `gemini-3.5-flash`. Supports streaming (`streamGemini`).
 
-### Cerebras
-Uses `@cerebras/cerebras_cloud_sdk` with `gpt-oss-120b` for fast cloud inference. Supports streaming (`streamCerebras`).
+### Groq
+Uses `groq-sdk` with `openai/gpt-oss-120b` for fast cloud inference. Supports streaming (`streamGroq`).
 
 ### Sarvam AI
 Uses `sarvamai` SDK tailored for Hinglish & Indic language contexts with specialized prompt. Supports streaming (`streamSarvam`).
@@ -565,9 +565,9 @@ Hits the local Ollama `/api/chat` endpoint via native `fetch`. Runs fully offlin
 
 ```bash
 cd server
-npm install
+bun install
 cp .env.example .env   # fill in your values
-npm run dev
+bun dev
 ```
 
 > Make sure Ollama is running (`ollama serve`) with your model pulled (`ollama pull <model>`) before hitting any Gemma routes.

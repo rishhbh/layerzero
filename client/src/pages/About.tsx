@@ -64,7 +64,7 @@ const About: React.FC = () => {
               <Zap className="mr-3 text-foreground h-6 w-6" /> Hybrid AI Inference
             </h2>
             <p className="text-muted-foreground leading-relaxed font-sans text-base mb-8 max-w-3xl">
-              We believe in picking the model that fits the task. Choose the inference engine that matches your requirements: maximum reasoning power (Gemini), fast open-source inference (Cerebras), complete privacy (Gemma, local-only), or native multilingual support (Sarvam).
+              We believe in picking the model that fits the task. Choose the inference engine that matches your requirements: maximum reasoning power (Gemini), fast open-source inference (Groq), complete privacy (Gemma, local-only), or native multilingual support (Sarvam).
             </p>
             <div className="grid md:grid-cols-2 gap-6">
               <ScrollSection delayClass="delay-50">
@@ -81,10 +81,10 @@ const About: React.FC = () => {
               <ScrollSection delayClass="delay-100">
                 <Card className="rounded-2xl bg-card border-border hover:border-input transition-all p-2">
                   <CardHeader>
-                    <CardTitle className="text-xl font-heading font-light text-foreground">GPT OSS 120B (Cerebras)</CardTitle>
+                    <CardTitle className="text-xl font-heading font-light text-foreground">GPT OSS 120B (Groq)</CardTitle>
                   </CardHeader>
                   <CardContent className="text-sm text-muted-foreground font-sans leading-relaxed">
-                    OpenAI's open-weight 120B parameter model served at speed via Cerebras hardware. A fast open-source middle ground between cloud polish and local privacy.
+                    OpenAI's open-weight 120B parameter model served at speed via Groq LPU hardware. A fast open-source middle ground between cloud polish and local privacy.
                   </CardContent>
                 </Card>
               </ScrollSection>
@@ -148,7 +148,7 @@ const About: React.FC = () => {
                 <span className="h-1.5 w-1.5 rounded-full bg-foreground shrink-0 mt-2" />
                 <div className="flex-1 leading-relaxed">
                   <span className="font-semibold text-foreground mr-1.5">Routing Layer:</span>
-                  <span>Dynamic SSE streaming dispatcher across 4 AI providers (Gemini, Cerebras, Sarvam, Gemma).</span>
+                  <span>Dynamic SSE streaming dispatcher across 4 AI providers (Gemini, Groq, Sarvam, Gemma).</span>
                 </div>
               </div>
 
