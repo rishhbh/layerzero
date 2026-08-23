@@ -1,12 +1,12 @@
 import systemPrompt from '../systemPrompt.js';
-import Cerebras from '@cerebras/cerebras_cloud_sdk';
+import { Groq } from 'groq-sdk';
 
-const cerebras = new Cerebras({ apiKey: process.env.CEREBRAS_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const cerebrasClient = async (text) => {
+const groqClient = async (text) => {
     try {
-        const response = await cerebras.chat.completions.create({
-            model: "gpt-oss-120b",
+        const response = await groq.chat.completions.create({
+            model: "openai/gpt-oss-120b",
             messages: [
                 {
                     role: 'system',
@@ -17,6 +17,11 @@ const cerebrasClient = async (text) => {
                     content: text
                 }
             ],
+            temperature: 1,
+            max_completion_tokens: 2048,
+            top_p: 1,
+            reasoning_effort: "medium",
+            stop: null
         });
         
         return response.choices[0].message.content;
@@ -25,4 +30,4 @@ const cerebrasClient = async (text) => {
     }
 };
 
-export default cerebrasClient;
+export default groqClient;

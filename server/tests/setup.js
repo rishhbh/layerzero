@@ -1,6 +1,11 @@
-import { beforeEach, afterAll, afterEach, beforeAll } from "@jest/globals";
+import { afterAll, afterEach, beforeAll } from "bun:test";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+dotenv.config({
+    path: ".env.test",
+});
 
 let mongoServer;
 

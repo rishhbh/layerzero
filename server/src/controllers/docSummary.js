@@ -1,6 +1,6 @@
 import gemmaClient from "../config/llm/gemmaClient.js";
 import geminiClient from "../config/llm/geminiClient.js";
-import cerebrasClient from "../config/llm/cerebrasClient.js";
+import groqClient from "../config/llm/groqClient.js";
 import extractText from "../services/document.js";
 import sarvamClient from "../config/llm/sarvamClient.js";
 import redis from "../config/redis.js";
@@ -15,7 +15,8 @@ const summariseDoc = async (req, res, next) => {
   const models = {
     gemma: gemmaClient,
     gemini: geminiClient,
-    cerebras: cerebrasClient,
+    groq: groqClient,
+    cerebras: groqClient,
     sarvam: sarvamClient,
   };
 

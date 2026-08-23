@@ -3,7 +3,7 @@ import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import geminiClient from "../config/llm/geminiClient.js";
 import gemmaClient from "../config/llm/gemmaClient.js";
-import cerebrasClient from "../config/llm/cerebrasClient.js";
+import groqClient from "../config/llm/groqClient.js";
 import sarvamClient from "../config/llm/sarvamClient.js";
 import redis from "../config/redis.js";
 import { webSummarySchema } from "../validators/summary.validator.js";
@@ -47,7 +47,8 @@ const scrapePage = async (req, res, next) => {
   const models = {
     gemma: gemmaClient,
     gemini: geminiClient,
-    cerebras: cerebrasClient,
+    groq: groqClient,
+    cerebras: groqClient,
     sarvam: sarvamClient,
   };
   try {
