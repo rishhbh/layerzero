@@ -29,13 +29,13 @@ function App() {
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
+              <Route path="/verification-sent" element={<VerificationSent />} />
+              <Route path="/email-verified" element={<EmailVerified />} />
+              <Route path="/verify-email/:token" element={<EmailVerified />} />
+              <Route path="/token-expired" element={<TokenExpired />} />
               <Route element={<PublicRoute />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/verification-sent" element={<VerificationSent />} />
-                <Route path="/email-verified" element={<EmailVerified />} />
-                <Route path="/verify-email/:token" element={<EmailVerified />} />
-                <Route path="/token-expired" element={<TokenExpired />} />
                 <Route path="/resend-verification" element={<ResendVerification />} />
               </Route>
             </Route>

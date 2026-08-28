@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Layers, Zap, Globe, FileText, Cpu, Sparkles, Languages, ArrowRight, CheckCircle2 } from 'lucide-react';
 
@@ -35,10 +34,6 @@ const ScrollSection: React.FC<{ children: React.ReactNode, delayClass?: string }
 };
 
 const Home: React.FC = () => {
-  const { loading } = useAuth();
-
-  if (loading) return null;
-
   return (
     <div className="flex flex-col bg-background text-foreground font-sans">
       {/* Vertically Balanced Hero Section */}
