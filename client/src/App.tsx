@@ -14,6 +14,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import VerificationSent from './pages/VerificationSent';
 import EmailVerified from './pages/EmailVerified';
+import TokenExpired from './pages/TokenExpired';
 import ResendVerification from './pages/ResendVerification';
 import UrlSummarizer from './pages/UrlSummarizer';
 import DocSummarizer from './pages/DocSummarizer';
@@ -34,6 +35,7 @@ function App() {
                 <Route path="/verification-sent" element={<VerificationSent />} />
                 <Route path="/email-verified" element={<EmailVerified />} />
                 <Route path="/verify-email/:token" element={<EmailVerified />} />
+                <Route path="/token-expired" element={<TokenExpired />} />
                 <Route path="/resend-verification" element={<ResendVerification />} />
               </Route>
             </Route>
