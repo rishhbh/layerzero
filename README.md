@@ -4,20 +4,38 @@ An AI-powered content summarization platform for PDFs, DOCX documents, and web l
 
 ---
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/homepage.png" alt="Homepage" width="420" />
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/about.png" alt="About" width="420" />
-</p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/login.png" alt="Login" width="420" />
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/register.png" alt="Register" width="420" />
-</p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/doc.png" alt="Doc Summarizer" width="420" />
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/response.png" alt="Response" width="420" />
-</p>
+<table align="center">
+  <tr>
+    <td align="center">
+      <strong>Homepage</strong><br>
+      <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/homepage.png" width="400">
+    </td>
+    <td align="center">
+      <strong>About</strong><br>
+      <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/about.png" width="400">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Login</strong><br>
+      <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/login.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Register</strong><br>
+      <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/register.png" width="400">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Doc Summarizer</strong><br>
+      <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/doc.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Response</strong><br>
+      <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/response.png" width="400">
+    </td>
+  </tr>
+</table>
 
 ---
 
