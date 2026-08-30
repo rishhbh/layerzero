@@ -1,158 +1,243 @@
 # Layerzero
 
-AI-powered content summarization platform built with React, Express.js, MongoDB, and a hybrid LLM architecture.
-
-Layerzero allows users to summarize PDFs, DOCX files, and web content using cloud-based or locally hosted language models. The platform focuses on simplicity, speed, and flexibility while providing a secure authentication layer and a clean content-processing pipeline.
+An AI-powered content summarization platform for PDFs, DOCX documents, and web links—built around hybrid LLM routing (cloud & local), deterministic content deduplication, sliding-window rate limiting, and real-time response streaming.
 
 ---
 
-## Overview
+## Technical Design Rationale (Why & How)
 
-Most content summarization tools force users into a single AI provider.
+### Why Upstash Redis Caching?
+* **Why:** LLM API inference is expensive (~$0.01–$0.05 per long prompt) and slow (5–10 seconds per request). Re-summarizing identical documents or URLs wastes API quota and degrades user experience.
+* **Solution:** Layerzero implements an in-memory Upstash Redis cache layer (`@upstash/redis`). Before dispatching any prompt to an LLM provider, the backend checks Redis for a pre-existing summary.
+* **Impact:** Reduces response latency for previously summarized content from **~8.5s down to ~150ms (~98% speedup)** while consuming **0 LLM tokens**.
 
-Layerzero takes a different approach.
+### Why SHA-256 Content Fingerprinting?
+* **Why:** Matching cache entries by raw filename or URL is flawed—users rename files, re-upload duplicate documents, or submit identical text under different parameter strings.
+* **Solution:** Content is extracted first (via `pdfjs-dist`, `mammoth`, or `Mozilla Readability`), normalized, and hashed using SHA-256 (`crypto.createHash('sha256')`). The hex digest forms the Redis cache key (`summary:<SHA256_HASH>`).
+* **Impact:** Cache hits are tied to the *actual text content*, guaranteeing instant deduplicated lookup regardless of original filename, upload timestamp, or client metadata.
 
-Users can choose between:
+### Why Rate Limiting & Sliding Window Algorithm?
+* **Why Rate Limiting:** Unprotected LLM routes expose the application to runaway API billing, while auth routes invite credential-stuffing attacks and email spamming.
+* **Why Sliding Window:** Fixed-window limiters reset counters at hard minute boundaries, allowing double-burst traffic spikes (e.g., 30 requests at 12:00:59 + 30 requests at 12:01:01 = 60 requests in 2 seconds). The sliding window algorithm (`@upstash/ratelimit`) computes a moving weighted average across window segments to enforce continuous traffic smoothing.
+* **Configured Enforcements:**
+  * `authLimiter`: 20 requests / 10 minutes (`/api/auth/*`)
+  * `resendLimiter`: 3 requests / 24 hours (`/api/auth/user/resend`)
+  * `aiLimiter`: 30 requests / 15 minutes (`/api/scrape/*`)
 
-* **Gemini 3.5 Flash** for powerful cloud-based inference
-* **GPT OSS 120B via Groq** for fast, open-source cloud inference
-* **Gemma 4 via Ollama** for local inference and privacy-focused workflows
-* **Sarvam 30B** for Hinglish and multilingual conversational workflows
+### Why Docker & Docker Compose?
+* **Why:** Running client, backend server, and Redis across host operating systems introduces Node runtime version drift, missing dependencies, and local networking friction. Connecting containerized backend apps to host-running local LLMs (Ollama) requires special network bridging.
+* **Solution:** Docker Compose orchestrates the React client, Express server, and Redis instances in containerized isolation. Server containers route local LLM requests to host Ollama using `host.docker.internal:11434`.
 
-Whether you're summarizing a research paper, technical documentation, blog post, or an article you definitely intended to read later, Layerzero extracts the content and generates concise summaries within seconds.
+### Why Hybrid Multi-LLM Architecture?
+* **Why:** Cloud models offer large context scale but incur API costs and privacy concerns. Local models guarantee privacy and zero API fees but depend on client hardware. Indic language contexts require tailored prompt tokenization.
+* **Solution:** Users can dynamically select the model backend per request:
+  * **Gemini 3.5 Flash:** Cloud inference for large, complex documents.
+  * **GPT OSS 120B via Groq:** Ultra-low latency cloud inference.
+  * **Gemma 4 via Ollama:** Offline, privacy-first execution with zero API cost.
+  * **Sarvam 30B:** Tailored prompt and client for Hinglish and Indian multilingual context parsing.
 
----
+### Why Server-Sent Events (SSE) for Streaming?
+* **Why:** Waiting 8+ seconds for full LLM text generation creates poor perceived latency. WebSockets introduce unnecessary bidirectional state overhead for simple server-to-client token delivery.
+* **Solution:** Uses standard HTTP Server-Sent Events (`text/event-stream`). Tokens stream chunk-by-chunk directly to the UI, providing real-time feedback with native browser reconnection handling.
 
-## Screenshots
+### Why httpOnly JWT Cookies?
+* **Why:** Storing access tokens in browser `localStorage` exposes them to XSS (Cross-Site Scripting) token theft.
+* **Solution:** JWTs are issued inside `httpOnly` cookies with `SameSite=Lax` (`Secure` in production). JavaScript cannot read `httpOnly` cookies, shielding authentication tokens from malicious injected scripts.
 
-<table>
-  <tr>
-    <td align="center">
-      <strong>Homepage</strong><br>
-      <img src="client/screenshots/homepage.png" width="400">
-    </td>
-    <td align="center">
-      <strong>About</strong><br>
-      <img src="client/screenshots/about.png" width="400">
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <strong>Login</strong><br>
-      <img src="client/screenshots/login.png" width="400">
-    </td>
-    <td align="center">
-      <strong>Register</strong><br>
-      <img src="client/screenshots/register.png" width="400">
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <strong>Doc Summarizer</strong><br>
-      <img src="client/screenshots/doc.png" width="400">
-    </td>
-    <td align="center">
-      <strong>Response</strong><br>
-      <img src="client/screenshots/response.png" width="400">
-    </td>
-  </tr>
-</table>
+### Why Mozilla Readability + JSDOM for Scraping?
+* **Why:** Web pages contain heavy markup noise—navbars, footers, cookie banners, scripts, ads, and sidebars—which inflates LLM input token costs and dilutes summary quality.
+* **Solution:** `axios` fetches raw HTML, `JSDOM` constructs a Virtual DOM, and `@mozilla/readability` strips non-article elements to extract pure content text.
+
+### Why In-Memory Document Parsing (`pdfjs-dist` & `mammoth`)?
+* **Why:** Relying on OS CLI tools (like `pdftotext` or `libreoffice`) inflates Docker image size, slows container builds, and introduces system vulnerability vectors.
+* **Solution:** Parses PDFs (`pdfjs-dist`) and DOCX (`mammoth`) directly from `multer` memory buffers (`req.file.buffer`) in pure JavaScript memory.
 
 ---
 
-## Features
+## Detailed Technology Stack & Rationale
 
-### Content Ingestion
-
-* PDF document uploads (parsed via `pdfjs-dist`)
-* DOCX document uploads
-* Website URL summarization
-* Automatic text extraction
-* Article content parsing using Mozilla Readability
-* Unified document processing pipeline with mimetype-based routing
-
-### Intelligent Caching
-
-* Upstash Redis-powered caching layer
-* SHA-256 content fingerprinting for document and URL deduplication
-* Cache-first retrieval for previously processed content
-* Automatic 1-day cache expiration via Redis TTLs
-* Eliminates redundant LLM inference for identical requests
-* Reduced repeated summary latency from ~8.5s to ~150ms (~98% improvement)
-
-### AI-Powered Summarization & Streaming
-
-* Real-Time Token Streaming (Server-Sent Events / SSE)
-* Gemini 3.5 Flash integration
-* GPT OSS 120B integration via Groq
-* Gemma 4 integration via Ollama
-* Sarvam 30B integration
-* Four user-selectable AI models
-* Hybrid cloud/local architecture
-* Flexible inference workflows
-* Hinglish-friendly and multilingual support via Sarvam
-
-### Authentication & Security
-
-* JWT Authentication via httpOnly cookies
-* Email verification flow with Nodemailer (`POST /api/auth/user/resend`, `GET /api/auth/user/verify/:token`)
-* Protected API routes
-* Strict payload validation using Zod schemas
-* Secure password hashing with bcrypt
-* Middleware-based authorization
-* Custom Upstash Redis sliding window rate limiting (`@upstash/ratelimit`) on auth, email resend, and LLM routes
-
-### Testing & Reliability
-
-* Automated unit and integration testing suite via Jest & Supertest
-* In-memory MongoDB (`mongodb-memory-server`) for fast, isolated test runs
-* Automated test coverage for authentication flows and health checks
-
-### Infrastructure
-
-* One-command startup script (`start.sh`) for Docker Compose
-* Docker Compose setup for client, server, and Redis
-* AWS EC2 deployment for backend services (HTTP / HTTPS with SSL support)
-* Automated CI/CD pipeline via GitHub Actions
-* Centralized server source directory (`server/src/`) with `app.js` and `server.js` separation
-* Upstash Redis integration for intelligent summary caching and rate limiting
-* SHA-256 content hashing for cache deduplication
-* Cache-first retrieval strategy with automatic TTL expiration
-* Local Ollama support via `host.docker.internal`
-
-### Export
-
-* PDF export of generated summaries via jsPDF
-* Markdown-to-plain-text conversion before export for clean output
-
-### Multilingual Support
-
-Layerzero includes Sarvam 30B support for Hinglish and multilingual interactions.
-
-This enables more natural summarization and conversational workflows for users who frequently switch between English and Indian languages, while maintaining the same unified processing pipeline used across all supported models.
+| Layer / Domain | Technology | Operational Function | Why Used (Engineering Rationale) |
+|---|---|---|---|
+| **Frontend Framework** | React 18 | Declarative UI rendering & state management | Component reactivity, rich library ecosystem, and seamless SSE stream handling |
+| **Build Tool** | Vite | Client bundling & HMR server | Instant cold start and hot module reloading compared to legacy bundlers |
+| **Frontend Language** | TypeScript | Static type safety | Prevents runtime bugs in API payload shapes, state hooks, and stream chunks |
+| **Styling System** | Tailwind CSS + shadcn/ui | Utility-first CSS & accessible components | Rapid, consistent UI design without CSS bundle bloat or runtime style overhead |
+| **Document Export** | `jsPDF` | Client-side PDF file generation | Converts Markdown summaries to PDF directly in browser without backend rendering burden |
+| **Markdown Rendering** | `remark-gfm` + `rehype-raw` | Markdown parser & HTML sanitizer | Safely renders structured LLM markdown output (tables, lists, code blocks) in UI |
+| **Backend Runtime** | Node.js / Bun | Server-side JavaScript execution | Asynchronous event loop optimized for high-concurrency I/O and streaming |
+| **Web Framework** | Express.js v5 | HTTP routing & middleware pipeline | Native promise-rejection error handling and lightweight route middleware stack |
+| **Database** | MongoDB via Mongoose | NoSQL persistent storage & ODM | Flexible JSON document schemas for user profiles, auth status, and summary metadata |
+| **Caching Engine** | Upstash Redis (`@upstash/redis`) | Serverless HTTP Redis client | Eliminates TCP connection pool overhead in serverless and containerized environments |
+| **Rate Limiter** | Upstash Ratelimit (`@upstash/ratelimit`) | Traffic control middleware | Implements sliding-window algorithm to smooth request bursts and protect API quotas |
+| **Authentication** | `jsonwebtoken` + `bcrypt` | Signed JWTs & salted password hashing | Stateless session verification with secure password hash storage (`bcrypt` 10 rounds) |
+| **Input Validation** | Zod | Runtime schema validation | Enforces strict payload types before requests touch controllers or database drivers |
+| **Email Transport** | Nodemailer | Gmail SMTP client | Dispatches HTML email verification links with hex expiration tokens |
+| **Web Scraping** | Axios + JSDOM + `@mozilla/readability` | Web content fetcher & DOM parser | Isolates primary article text while discarding ads, navigation, and boilerplate HTML |
+| **Document Parsers** | `pdfjs-dist` + `mammoth` | In-memory text extraction | Extracts clean raw text from PDF & DOCX binary buffers without OS binary dependencies |
+| **Streaming Protocol** | Server-Sent Events (`text/event-stream`) | Unidirectional HTTP streaming | Low-overhead real-time token streaming from server to client |
+| **Containerization** | Docker & Docker Compose | Container orchestration | Ensures 1:1 local and production environment parity across client, server, and Redis |
+| **Testing Suite** | Jest / Bun Test + Supertest + `mongodb-memory-server` | Integration & unit testing | Runs fast, isolated test suites against in-memory MongoDB without database side-effects |
 
 ---
 
-## Architecture
+## Detailed API Endpoints (Under the Hood)
+
+### Health Check
+
+#### `GET /api/health`
+* **Access:** Public
+* **Rate Limit:** Unrestricted
+* **Under the Hood Execution:**
+  1. Computes runtime process uptime via `process.uptime()`.
+  2. Verifies backend HTTP service availability.
+  3. Returns `200 OK` with payload:
+     ```json
+     {
+       "status": "OK",
+       "message": "API is working properly",
+       "uptime": 184
+     }
+     ```
+
+---
+
+### Authentication Routes (`/api/auth/user`)
+
+#### `POST /api/auth/user/register`
+* **Access:** Public
+* **Rate Limit:** `authLimiter` (20 requests / 10 minutes per IP)
+* **Request Body:** `{ "name": "...", "email": "...", "password": "..." }`
+* **Under the Hood Execution:**
+  1. **Validation:** Passes request body to Zod schema (`auth.validator.js`). Validates name (3–45 chars), valid email format, and password length (min 8 chars).
+  2. **Duplicate Check:** Queries MongoDB `User` model for existing account matching `email`. Returns `400 Bad Request` if user exists.
+  3. **Password Hashing:** Hashes plain password using `bcrypt` with 10 salt rounds.
+  4. **Verification Token Generation:** Generates a 32-byte hex token via `crypto.randomBytes(32)` and sets `verificationTokenExpires` to `Date.now() + 15 minutes`.
+  5. **User Creation:** Saves new user to MongoDB with `isVerified: false`.
+  6. **Email Dispatch:** Renders HTML verification email via `verificationEmail.js` containing link `${API_URL}/api/auth/user/verify/${token}` and sends via Nodemailer (Gmail SMTP).
+  7. **Response:** Returns `201 Created` with message `"You're registered, now verify email"`.
+
+#### `GET /api/auth/user/verify/:token`
+* **Access:** Public
+* **Rate Limit:** `authLimiter` (20 requests / 10 minutes per IP)
+* **URL Parameter:** `token` (32-byte hex string)
+* **Under the Hood Execution:**
+  1. **Token Lookup:** Queries MongoDB for user matching `verificationToken: token` where `verificationTokenExpires > Date.now()`.
+  2. **Expiration Check:** If no matching user or token expired, returns `400 Bad Request` (`"Invalid or expired verification token"`).
+  3. **Account Activation:** Updates `isVerified: true`, removes `verificationToken` and `verificationTokenExpires` fields, and saves updated document.
+  4. **Redirect:** Returns `302 Found` redirecting user's browser to `${CLIENT_URL}/email-verified`.
+
+#### `POST /api/auth/user/resend`
+* **Access:** Public
+* **Rate Limit:** `resendLimiter` (3 requests / 24 hours per email/IP)
+* **Request Body:** `{ "email": "..." }`
+* **Under the Hood Execution:**
+  1. **Validation:** Validates email format via Zod.
+  2. **User Lookup:** Queries MongoDB for `User` by email. Returns `404 Not Found` if missing.
+  3. **Verification Check:** If user is already verified (`isVerified === true`), returns `400 Bad Request` (`"User is already verified"`).
+  4. **Token Refresh:** Generates new hex verification token and 15-minute expiration timestamp. Saves user.
+  5. **Email Dispatch:** Sends updated verification link email via Nodemailer.
+  6. **Response:** Returns `200 OK` (`"Verification sent to your email successfully"`).
+
+#### `POST /api/auth/user/login`
+* **Access:** Public
+* **Rate Limit:** `authLimiter` (20 requests / 10 minutes per IP)
+* **Request Body:** `{ "email": "...", "password": "..." }`
+* **Under the Hood Execution:**
+  1. **Validation:** Validates credentials format via Zod.
+  2. **User Retrieval:** Queries MongoDB `User` model by email. Returns `400 Bad Request` if user not found.
+  3. **Password Comparison:** Compares plain password with stored bcrypt hash using `bcrypt.compare()`. Returns `400 Bad Request` if invalid.
+  4. **Verification Verification:** Checks `user.isVerified`. If `false`, returns `403 Forbidden` (`"Verify your email first"`).
+  5. **JWT Issuance:** Calls `generateJWT(res, user._id)`. Generates JWT signed with `JWT_SECRET` (7-day expiry) and attaches token as `jwt` cookie (`httpOnly: true`, `sameSite: 'lax'`, `maxAge: 7 days`).
+  6. **Response:** Returns `200 OK` with user JSON (`_id`, `name`, `email`).
+
+#### `POST /api/auth/user/logout`
+* **Access:** Public
+* **Rate Limit:** Unrestricted
+* **Under the Hood Execution:**
+  1. Clears `jwt` cookie by setting `res.cookie('jwt', '', { maxAge: 0 })`.
+  2. Returns `200 OK` (`"The user has been logged out successfully"`).
+
+#### `GET /api/auth/user/check`
+* **Access:** Protected (JWT Cookie Required)
+* **Rate Limit:** `authLimiter` (20 requests / 10 minutes per IP)
+* **Under the Hood Execution:**
+  1. **Middleware Check (`protectRoute`):** Reads `req.cookies.jwt`. Returns `401 Unauthorized` if cookie is missing.
+  2. **Token Verification:** Verifies JWT signature using `jwt.verify(token, JWT_SECRET)`. Returns `401 Unauthorized` if expired or invalid.
+  3. **User Population:** Queries MongoDB `User.findById(decoded.userId).select('-password')`. Returns `404 Not Found` if user record was deleted.
+  4. **Context Attachment:** Attaches user object to `req.user`.
+  5. **Response:** Returns `200 OK` with active user profile.
+
+---
+
+### Content Ingestion & Summarization Routes (`/api/scrape`)
+
+All ingestion routes require a valid `jwt` httpOnly cookie and are enforced by `aiLimiter` (30 requests / 15 minutes).
+
+#### `POST /api/scrape/web`
+* **Access:** Protected (`protectRoute`)
+* **Rate Limit:** `aiLimiter` (30 requests / 15 minutes per user/IP)
+* **Request Body:** `{ "url": "https://...", "client": "gemini", "stream": true }`
+  * `client` options: `"gemini"`, `"groq"`, `"gemma"`, `"sarvam"`
+  * `stream`: `boolean` (optional, defaults to `false`)
+* **Under the Hood Execution:**
+  1. **Schema Validation:** Validates URL syntax and supported AI client string via Zod (`summary.validator.js`).
+  2. **Web Scraping:** Uses `axios.get(url)` with custom browser `User-Agent` headers to fetch raw HTML.
+  3. **DOM Parsing & Extraction:** Initializes `JSDOM` with fetched HTML and passes DOM to `@mozilla/readability`. Extracts `article.textContent` (clean article text). If extraction fails, returns `400 Bad Request` (`"Could not extract article content"`).
+  4. **SHA-256 Hashing:** Computes hex digest `hashContent(articleText)`. Derives cache key `summary:<HASH>`.
+  5. **Redis Cache Lookup:** Queries Upstash Redis.
+     * **Cache Hit:** Immediately returns stored summary JSON (`{ "output": "..." }`) or streams cached summary via SSE (~150ms latency, 0 LLM tokens).
+     * **Cache Miss:** Continues to Model Routing.
+  6. **Model Routing:** Dispatches cleaned text to selected AI provider:
+     * `gemini`: Calls `@google/genai` SDK with model `gemini-3.5-flash`.
+     * `groq`: Calls `groq-sdk` with model `openai/gpt-oss-120b`.
+     * `gemma`: Calls local Ollama endpoint `POST http://localhost:11434/api/chat` via `fetch`.
+     * `sarvam`: Calls `sarvamai` SDK with Hinglish system prompt (`sarvamSystemPrompt.js`).
+  7. **Response Delivery:**
+     * **Standard (`stream: false`):** Awaits complete model completion, caches summary string in Redis (24h TTL), and returns `200 OK` `{ "output": "..." }`.
+     * **Streaming (`stream: true`):** Sets headers `Content-Type: text/event-stream`, `Cache-Control: no-cache`. Streams tokens as SSE chunks (`event: chunk`, `data: {"delta":"..."}`). Accumulates tokens and caches final text in Redis upon completion (`event: done`).
+
+#### `POST /api/scrape/doc`
+* **Access:** Protected (`protectRoute`)
+* **Rate Limit:** `aiLimiter` (30 requests / 15 minutes per user/IP)
+* **Request Format:** `multipart/form-data`
+  * `document`: File upload (PDF or DOCX, max 5MB)
+  * `client`: String (`"gemini"`, `"groq"`, `"gemma"`, `"sarvam"`)
+  * `stream`: String/Boolean (`"true"` or `true` optional)
+* **Under the Hood Execution:**
+  1. **File Interception:** `multer.single('document')` intercepts request and loads file buffer into `req.file.buffer` (memory storage). Returns `400 Bad Request` if missing file or >5MB limit.
+  2. **Mimetype Document Parsing (`document.js` service):**
+     * `application/pdf`: Passes buffer to `pdfparse.js` (`pdfjs-dist`). Extracts text content page by page.
+     * `application/vnd.openxmlformats-officedocument.wordprocessingml.document` (DOCX): Passes buffer to `docxparse.js` (`mammoth`). Extracts raw text string.
+  3. **SHA-256 Hashing:** Normalizes text and generates hex hash `hashContent(extractedText)`. Formats Redis key `summary:<HASH>`.
+  4. **Redis Cache Lookup:** Checks Upstash Redis for existing key. Returns cached summary instantly on hit.
+  5. **Model Routing & Execution:** Dispatches text to selected model wrapper (`gemini`, `groq`, `gemma`, or `sarvam`).
+  6. **Response & Caching:** Streams tokens via SSE (`stream: true`) or returns JSON summary (`{ "summary": "..." }`), saving the result to Redis with 24-hour TTL.
+
+---
+
+## End-to-End System Architecture
 
 ```text
 ┌─────────────────┐
 │  React Client   │
 └────────┬────────┘
-         │
+         │ HTTP / SSE (with httpOnly JWT cookie)
          ▼
 ┌─────────────────┐
 │  Express Server │
 └────────┬────────┘
          │
+         ├──► authLimiter / aiLimiter (Upstash Sliding Window Rate Limit)
+         ├──► protectRoute Middleware (JWT Cookie Validation)
+         │
          ▼
 ┌─────────────────┐
-│ Content Parsing │
+│ Content Parsing │ (Web: Axios + JSDOM + Readability | Doc: pdfjs-dist / mammoth)
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│ SHA-256 Hashing │
+│ SHA-256 Hashing │ (crypto.createHash('sha256') on extracted raw text)
 └────────┬────────┘
          │
          ▼
@@ -161,309 +246,44 @@ This enables more natural summarization and conversational workflows for users w
 └────┬─────────┬──┘
      │Hit      │Miss
      ▼         ▼
-   Summary   Model Selection
+   Summary   Model Routing
                    │
            ┌───────┼───────┬───────┐
            ▼       ▼       ▼       ▼
-        Gemini   GPT OSS  Gemma  Sarvam
-                   │
-                   ▼
-                 Summary
-                   │
-                   ▼
-              Store in Redis
+        Gemini   Groq    Gemma   Sarvam
+           │       │       │       │
+           └───────┴───┬───┴───────┘
+                       ▼
+                    Summary
+                       │
+                       ▼
+                 Store in Redis (24h TTL)
 ```
 
 ---
 
-## Website Summarization Flow
+## Screenshots
 
-```text
-URL
- │
- ▼
-Axios
- │
- ▼
-JSDOM
- │
- ▼
-Mozilla Readability
- │
- ▼
-Article Extraction
- │
- ▼
-Selected Model
- │
- ▼
-Summary
-```
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/homepage.png" alt="Homepage" width="420" />
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/about.png" alt="About" width="420" />
+</p>
 
-### Technologies Used
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/login.png" alt="Login" width="420" />
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/register.png" alt="Register" width="420" />
+</p>
 
-* Axios
-* JSDOM
-* Mozilla Readability
-* Gemini API
-* Groq API
-* Gemma 4
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/doc.png" alt="Doc Summarizer" width="420" />
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/response.png" alt="Response" width="420" />
+</p>
 
 ---
 
-## Document Summarization Flow
+## Quick Startup (Docker)
 
-```text
-PDF / DOCX Upload
-       │
-       ▼
-    Multer
-       │
-       ▼
-  extractText()
-  (mimetype routing)
-       │
-   ┌───┴───┐
-   ▼       ▼
-pdfjs-dist mammoth
-   │       │
-   └───┬───┘
-       ▼
- Text Extraction
-       │
-       ▼
- Selected Model
-       │
-       ▼
-   Summary
-```
-
-### Technologies Used
-
-* Multer
-* pdfjs-dist
-* mammoth
-* Gemini API
-* Groq API
-* Gemma 4
-* Sarvam AI
-
----
-
-## Tech Stack
-
-### Frontend
-
-* React
-* TypeScript
-* Tailwind CSS
-* shadcn/ui
-* jsPDF
-* remark-gfm & rehype-raw
-
-### Backend
-
-* Node.js
-* Express.js v5
-* morgan (HTTP Logger)
-
-### Database
-
-* MongoDB via Mongoose
-
-### Caching & Rate Limiting
-
-* Upstash Redis (`@upstash/redis`)
-* Upstash Ratelimit (`@upstash/ratelimit`)
-
-### Authentication & Security
-
-* JWT
-* bcrypt
-* Zod
-
-### Content Processing
-
-* Axios
-* JSDOM
-* Mozilla Readability (`@mozilla/readability`)
-* Multer
-* pdfjs-dist
-* mammoth
-
-### Testing
-
-* Jest
-* Supertest
-* mongodb-memory-server
-
-### Infrastructure
-
-* Docker & Docker Compose
-* AWS EC2
-* GitHub Actions
-* Redis
-
-### AI Models
-
-* Gemini 3.5 Flash
-* GPT OSS 120B (via Groq)
-* Gemma 4 (via Ollama)
-* Sarvam 30B
-
----
-
-## API Endpoints
-
-### Authentication
-
-#### Register
-
-```http
-POST /api/auth/user/register
-```
-*Registers a new user and sends an email verification link. Returns `201 Created`.*
-
-#### Verify Email
-
-```http
-GET /api/auth/user/verify/:token
-```
-*Verifies user email using the verification token sent via email.*
-
-#### Resend Verification Email
-
-```http
-POST /api/auth/user/resend
-```
-*Resends the verification email link to the specified email address. Rate limited to 3 requests per 24 hours.*
-
-#### Login
-
-```http
-POST /api/auth/user/login
-```
-*Authenticates verified users and sets `jwt` httpOnly cookie.*
-
-#### Logout
-
-```http
-POST /api/auth/user/logout
-```
-*Clears the `jwt` cookie.*
-
-#### Check Authentication
-
-```http
-GET /api/auth/user/check
-```
-*Returns the currently authenticated user profile.*
-
----
-
-### Protected Routes
-
-Authentication required. All endpoints support both standard JSON responses and real-time Server-Sent Events (SSE) streaming.
-
-#### Website Summarization
-
-```http
-POST /api/scrape/web
-```
-
-Request Body
-
-```json
-{
-  "url": "https://example.com/article",
-  "client": "gemini",
-  "stream": true
-}
-```
-
-`client` accepts:
-
-* `gemini`
-* `groq`
-* `gemma`
-* `sarvam`
-
-*Optional*: Send `stream: true` in JSON body or pass `?stream=true` as a query parameter to enable real-time SSE token streaming (`text/event-stream`).
-
----
-
-#### Document Summarization (PDF / DOCX)
-
-```http
-POST /api/scrape/doc
-```
-
-Content-Type
-
-```text
-multipart/form-data
-```
-
-Fields
-
-```text
-document: file.pdf or file.docx
-client: gemini or groq or gemma or sarvam
-stream: true (optional)
-```
-
-*Optional*: Include `stream: true` to receive a real-time SSE token stream (`text/event-stream`).
-
----
-
-## Project Structure
-
-```bash
-Layerzero/
-│
-├── docker-compose.yml
-├── start.sh
-├── README.md
-│
-├── client/
-│   ├── Dockerfile
-│   └── src/
-│       ├── components/
-│       ├── pages/
-│       ├── context/
-│       ├── layouts/
-│       └── lib/
-│
-└── server/
-    ├── Dockerfile
-    ├── jest.config.js
-    ├── src/
-    │   ├── app.js
-    │   ├── server.js
-    │   ├── config/
-    │   ├── controllers/
-    │   ├── emails/
-    │   ├── middlewares/
-    │   ├── models/
-    │   ├── routes/
-    │   ├── services/
-    │   ├── utils/
-    │   └── validators/
-    └── tests/
-        ├── setup.js
-        ├── auth.test.js
-        └── health.test.js
-```
-
-## Deployment
-
-The backend server is deployed on an **AWS EC2 instance**, managed through a fully automated CI/CD pipeline using **GitHub Actions**. Every push to the main branch automatically builds and deploys the latest version to the server, ensuring rapid and consistent updates.
-
----
-
-## Quick Startup (with Docker)
-
-Run the convenient startup script to build and launch all services in detached mode:
+Launch client, server, and Redis in containerized environment:
 
 ```bash
 ./start.sh
@@ -475,124 +295,79 @@ Or manually using Docker Compose:
 docker compose up --build -d
 ```
 
-This starts the client, server, and Redis containers together.
-
-> To use Gemma locally inside Docker, ensure Ollama is running on your host machine and set `OLLAMA_BASE_URL=http://host.docker.internal:11434` in your server `.env`.
+> **Note for Gemma (Local LLM):** Ensure Ollama is running on your host machine (`ollama serve`). The server container connects to Ollama via `OLLAMA_BASE_URL=http://host.docker.internal:11434`.
 
 ---
 
 ## Running Backend Tests
-
-Layerzero features an automated testing suite using Jest, Supertest, and an in-memory MongoDB server.
 
 ```bash
 cd server
 npm test
 ```
 
+Runs integration tests for auth, health check, and rate limiters against an isolated in-memory MongoDB database (`mongodb-memory-server`).
+
 ---
 
-## Running Locally (without Docker)
+## Local Development (Without Docker)
 
-### Clone Repository
+1. **Clone repository:**
+   ```bash
+   git clone https://github.com/render-TheVoid/layerzero.git
+   cd layerzero
+   ```
 
-```bash
-git clone https://github.com/render-TheVoid/layerzero.git
-cd layerzero
-```
+2. **Backend setup:**
+   ```bash
+   cd server
+   npm install
+   cp .env.example .env
+   npm run dev
+   ```
 
-### Install Backend Dependencies
+3. **Frontend setup:**
+   ```bash
+   cd client
+   npm install
+   npm run dev
+   ```
 
-```bash
-cd server
-npm install
-```
+---
 
-### Install Frontend Dependencies
-
-```bash
-cd client
-npm install
-```
-
-### Configure Environment Variables
+## Environment Variables
 
 ```env
-PORT=
-HTTPS_PORT=
+PORT=5000
+HTTPS_PORT=5001
 SSL_KEY_PATH=
 SSL_CERT_PATH=
-MONGODB_URI=
-OLLAMA_MODEL=
-OLLAMA_BASE_URL=
-GEMINI_API_KEY=
-GROQ_API_KEY=
-SARVAM_API_KEY=
-JWT_SECRET=
-NODE_ENV=
-CLIENT_URL=
-API_URL=
-EMAIL_USER=
-EMAIL_APP_PASSWORD=
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
-```
-
-### Run Development Servers
-
-Backend
-
-```bash
-npm run dev
-```
-
-Frontend
-
-```bash
-npm run dev
+MONGODB_URI=mongodb://localhost:27017/layerzero
+OLLAMA_MODEL=gemma:4b
+OLLAMA_BASE_URL=http://localhost:11434
+GEMINI_API_KEY=your_gemini_api_key
+GROQ_API_KEY=your_groq_api_key
+SARVAM_API_KEY=your_sarvam_api_key
+JWT_SECRET=your_jwt_secret
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+API_URL=http://localhost:5000
+EMAIL_USER=your_email@gmail.com
+EMAIL_APP_PASSWORD=your_gmail_app_password
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
 ```
 
 ---
 
-## Why Layerzero?
+## Current Limitations & Roadmap
 
-Most summarization platforms rely entirely on cloud-hosted AI.
-
-Layerzero combines cloud and local inference, giving users more control over privacy, performance, and operational costs.
-
-Benefits include:
-
-* Reduced API dependency
-* Local AI execution
-* Four selectable AI models
-* Real-time streaming support
-* Improved privacy via local inference
-* Hybrid cloud/local architecture
-
-Because sometimes you want the power of a cloud model, and sometimes you want your laptop to suffer instead.
-
----
-
-## Current Limitations
-
-* No document history
-* No persistent summary storage
-* Single-document processing
-
----
-
-## Coming Soon
-
-* Summary history and persistence
-* Multi-document summarization
-* Background processing for large documents
+* **Single Document Focus:** Currently processes one document or URL per request. Multi-document batch processing planned.
+* **Persistent History:** Summaries currently persist in Redis cache (24h TTL) but are not yet saved to user accounts permanently.
+* **Background Queues:** Future updates will integrate worker queues (e.g. BullMQ) for asynchronous long-document parsing.
 
 ---
 
 ## License
 
 MIT License
-
----
-
-Built with React, Node (Express), MongoDB, Redis and a stubborn refusal to choose between cloud AI and local AI.
