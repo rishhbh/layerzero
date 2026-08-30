@@ -4,6 +4,23 @@ An AI-powered content summarization platform for PDFs, DOCX documents, and web l
 
 ---
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/homepage.png" alt="Homepage" width="420" />
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/about.png" alt="About" width="420" />
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/login.png" alt="Login" width="420" />
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/register.png" alt="Register" width="420" />
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/doc.png" alt="Doc Summarizer" width="420" />
+  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/dev/assets/response.png" alt="Response" width="420" />
+</p>
+
+---
+
 ## Technical Design Rationale (Why & How)
 
 ### Why Upstash Redis Caching?
@@ -260,26 +277,7 @@ All ingestion routes require a valid `jwt` httpOnly cookie and are enforced by `
                  Store in Redis (24h TTL)
 ```
 
----
 
-## Screenshots
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/homepage.png" alt="Homepage" width="420" />
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/about.png" alt="About" width="420" />
-</p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/login.png" alt="Login" width="420" />
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/register.png" alt="Register" width="420" />
-</p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/doc.png" alt="Doc Summarizer" width="420" />
-  <img src="https://raw.githubusercontent.com/rishhbh/layerzero/main/assets/response.png" alt="Response" width="420" />
-</p>
-
----
 
 ## Quick Startup (Docker)
 
@@ -303,7 +301,7 @@ docker compose up --build -d
 
 ```bash
 cd server
-npm test
+bun test
 ```
 
 Runs integration tests for auth, health check, and rate limiters against an isolated in-memory MongoDB database (`mongodb-memory-server`).
@@ -321,9 +319,9 @@ Runs integration tests for auth, health check, and rate limiters against an isol
 2. **Backend setup:**
    ```bash
    cd server
-   npm install
+   bun install
    cp .env.example .env
-   npm run dev
+   bun dev
    ```
 
 3. **Frontend setup:**

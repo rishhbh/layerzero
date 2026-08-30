@@ -199,8 +199,6 @@ All ingestion routes require a valid `jwt` httpOnly cookie and are enforced by `
 
 ```bash
 cd server
-npm test
-# or with Bun
 bun test
 ```
 
