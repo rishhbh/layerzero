@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, TriangleAlert } from 'lucide-react';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const updateSchema = z
   .object({
@@ -33,6 +34,8 @@ const updateSchema = z
 type UpdateFormValues = z.infer<typeof updateSchema>;
 
 const Account: React.FC = () => {
+  useDocumentTitle('Account');
+
   const { user, updateAccount, deleteAccount } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -96,7 +99,7 @@ const Account: React.FC = () => {
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-16 md:py-20">
       <div className="mb-12">
-        <p className="kicker mb-4">03 / Account</p>
+        <p className="kicker mb-4">04 / Account</p>
         <h1 className="text-3xl md:text-5xl font-heading font-medium tracking-tight text-foreground mb-2">Account</h1>
         <p className="text-muted-foreground text-base font-sans">Manage your profile, email, and password.</p>
       </div>
@@ -186,9 +189,27 @@ const Account: React.FC = () => {
         </Card>
       </div>
 
+      {/* Summary Archive Section */}
+      <Card className="mt-10 rounded-[4px] border border-border">
+        <div className="p-6 md:p-8 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h2 className="font-heading text-xl font-medium tracking-tight text-foreground">Summary Archive</h2>
+            <p className="text-sm text-muted-foreground font-sans mt-1">
+              Browse, search, and export all your past summarized documents and web pages.
+            </p>
+          </div>
+          <Link
+            to="/dashboard/history"
+            className="h-10 px-5 inline-flex items-center justify-center rounded-[4px] font-mono text-[11px] uppercase tracking-[0.18em] bg-secondary text-secondary-foreground hover:bg-muted transition-colors border border-border"
+          >
+            Open History ↗
+          </Link>
+        </div>
+      </Card>
+
       <Card className="mt-12 rounded-[4px] border border-destructive/30 bg-destructive/5">
         <div className="px-6 py-6 md:px-8">
-          <p className="kicker mb-6 text-destructive/70">03 / Danger Zone</p>
+          <p className="kicker mb-6 text-destructive/70">04 / Danger Zone</p>
 
           <div className="flex flex-col gap-y-2">
             <div className="flex items-center justify-between gap-6 flex-wrap">

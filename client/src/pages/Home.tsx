@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { ArrowRight, Globe, FileText, Layers, Sparkles, Cpu, Languages } from 'lucide-react';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const ScrollSection: React.FC<{ children: React.ReactNode, delayClass?: string }> = ({ children, delayClass = '' }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -44,6 +45,8 @@ const features: Feature[] = [
 ];
 
 const Home: React.FC = () => {
+  useDocumentTitle('layerzero — Technical Publication for AI Summarization', true);
+
   return (
     <div className="flex flex-col bg-background text-foreground font-sans">
       {/* Hero */}

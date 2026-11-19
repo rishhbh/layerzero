@@ -54,7 +54,7 @@ An AI-powered content summarization platform for PDFs, DOCX documents, and web l
 ### Why Rate Limiting & Sliding Window Algorithm?
 * **Why Rate Limiting:** Unprotected LLM routes expose the application to runaway API billing, while auth routes invite credential-stuffing and email resend spamming.
 * **Why Sliding Window:** Fixed-window limiters reset counters at hard time boundaries, allowing double-burst traffic spikes. `@upstash/ratelimit` computes a moving weighted average across sliding sub-windows to enforce continuous traffic smoothing.
-* **Limits:** `authLimiter` (20 req / 10m), `resendLimiter` (3 req / 24h), `aiLimiter` (30 req / 15m).
+* **Limits:** `authLimiter` (20 req / 10m), `resendLimiter` (3 req / 24h), `aiLimiter` (30 req / 15m), `summaryLimiter` (50 req / 60m).
 
 ### Why Docker & Docker Compose?
 * **Why:** Running client, backend server, and Redis across operating systems introduces runtime drift, missing dependencies, and local networking friction.
@@ -86,10 +86,10 @@ An AI-powered content summarization platform for PDFs, DOCX documents, and web l
 
 | Layer | Technology | Operational Function | Why Used (Engineering Rationale) |
 |---|---|---|---|
-| **Frontend Framework** | React 18 + Vite | Declarative UI & HMR build server | Component reactivity, rich library ecosystem, fast dev HMR, and seamless SSE stream handling |
+| **Frontend Framework** | React 19 + Vite | Declarative UI & HMR build server | Component reactivity, rich library ecosystem, fast dev HMR, and seamless SSE stream handling |
 | **Frontend Language** | TypeScript | Static type safety | Prevents runtime bugs in API payload shapes, state hooks, and stream chunks |
-| **Styling & UI** | Tailwind CSS + shadcn/ui | Utility-first CSS & accessible components | Rapid, consistent UI design without CSS bundle bloat or runtime style overhead |
-| **Document Export** | `jsPDF` | Client-side PDF file generation | Converts Markdown summaries to PDF directly in browser without backend rendering burden |
+| **Styling & UI** | Tailwind CSS v4 + editorial typography (EB Garamond, Geist Mono, Inter) | Utility-first CSS & technical editorial aesthetic | Rapid, consistent UI design without CSS bundle bloat or runtime style overhead |
+| **Document Export** | `jsPDF` + `marked` | Client-side PDF file generation | Converts Markdown summaries to formatted multi-page PDF directly in browser without backend rendering burden |
 | **Markdown Rendering** | `remark-gfm` + `rehype-raw` | Markdown parser & HTML sanitizer | Safely renders structured LLM markdown output (tables, lists, code blocks) in UI |
 | **Backend Runtime** | Node.js / Bun | Server-side JavaScript execution | Asynchronous event loop optimized for high-concurrency I/O and streaming |
 | **Web Framework** | Express.js v5 | HTTP routing & middleware pipeline | Native promise-rejection error handling and lightweight route middleware stack |
@@ -149,6 +149,14 @@ An AI-powered content summarization platform for PDFs, DOCX documents, and web l
 * **Access:** Protected (`protectRoute`) | **Rate Limit:** `authLimiter` (20 req / 10m)
 * **Execution:** `protectRoute` middleware verifies JWT cookie signature, populates `req.user` via `User.findById()`, and returns user profile.
 
+#### `PUT /api/auth/user/update`
+* **Access:** Protected (`protectRoute`) | **Rate Limit:** `authLimiter` (20 req / 10m)
+* **Execution:** Validates `name`, `email`, `currentPassword`, and `newPassword` via Zod. If changing email, marks `isVerified: false`, generates a 15-minute token, and dispatches a verification email. If changing password, validates `currentPassword` with `bcrypt.compare()` before salting and hashing `newPassword`.
+
+#### `DELETE /api/auth/user/delete`
+* **Access:** Protected (`protectRoute`) | **Rate Limit:** `authLimiter` (20 req / 10m)
+* **Execution:** Authenticates user via `req.user._id`, deletes the `User` record from MongoDB, clears the `jwt` cookie, and returns `200 OK`.
+
 ---
 
 ### Content Ingestion & Summarization Routes (`/api/scrape`)
@@ -162,7 +170,7 @@ An AI-powered content summarization platform for PDFs, DOCX documents, and web l
   3. Loads HTML into `JSDOM` and extracts clean `article.textContent` via `@mozilla/readability`.
   4. Hashes text using SHA-256 (`crypto.createHash('sha256')`) to form key `summary:<HASH>`.
   5. Queries Upstash Redis cache. On hit, returns cached summary (~150ms). On miss, routes text to selected AI provider SDK.
-  6. **Streaming (`stream: true`):** Sends `Content-Type: text/event-stream`. Streams chunks (`event: chunk`) as generated and caches final summary in Redis (24h TTL) on completion (`event: done`).
+  6. **Streaming (`stream: true`):** Sends `Content-Type: text/event-stream`. Streams chunks (`event: chunk`) as generated. On completion (`event: done`), caches final summary in Redis (24h TTL) and permanently saves a `Summary` document in MongoDB linked to `userId`.
 
 #### `POST /api/scrape/doc`
 * **Access:** Protected (`protectRoute`) | **Rate Limit:** `aiLimiter` (30 req / 15m)
@@ -172,7 +180,19 @@ An AI-powered content summarization platform for PDFs, DOCX documents, and web l
   2. Mimetype router (`document.js`) parses PDF via `pdfjs-dist` or DOCX via `mammoth`.
   3. Hashes raw text string using SHA-256 (`hashContent`) and queries Redis cache key `summary:<HASH>`.
   4. On cache miss, routes text to selected model wrapper (`gemini`, `groq`, `gemma`, `sarvam`).
-  5. Streams tokens via SSE (`stream: true`) or returns JSON summary, caching output in Redis (24h TTL).
+  5. Streams tokens via SSE (`stream: true`) or returns JSON summary, caching output in Redis (24h TTL) and persisting the record in MongoDB.
+
+---
+
+### Summary History Routes (`/api/summaries`)
+
+#### `GET /api/summaries`
+* **Access:** Protected (`protectRoute`) | **Rate Limit:** `summaryLimiter` (50 req / 60m)
+* **Execution:**
+  1. Authenticates session via `protectRoute` (verifies `jwt` cookie and attaches `req.user`).
+  2. Queries MongoDB `Summary` collection for all documents matching `userId: req.user._id`.
+  3. Sorts results chronologically in descending order (`createdAt: -1`) and strips internal keys (`select("-__v")`).
+  4. Returns `200 OK` JSON `{ "success": true, "count": N, "summaries": [...] }` with metadata, source hashes, titles, formatted markdown, and reading metrics.
 
 ---
 
@@ -188,7 +208,7 @@ An AI-powered content summarization platform for PDFs, DOCX documents, and web l
 │  Express Server │
 └────────┬────────┘
          │
-         ├──► authLimiter / aiLimiter (Upstash Sliding Window Rate Limit)
+         ├──► authLimiter / aiLimiter / summaryLimiter (Upstash Sliding Window Rate Limit)
          ├──► protectRoute Middleware (JWT Cookie Validation)
          │
          ▼
@@ -217,8 +237,10 @@ An AI-powered content summarization platform for PDFs, DOCX documents, and web l
                        ▼
                     Summary
                        │
-                       ▼
-                 Store in Redis (24h TTL)
+              ┌────────┴────────┐
+              ▼                 ▼
+        Store in Redis    Persist in MongoDB
+          (24h TTL)        (User History)
 ```
 
 ---
@@ -283,7 +305,7 @@ UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
 ## Current Limitations & Roadmap
 
 * **Single Document Focus:** Processes one document or URL per request. Multi-document batch processing planned.
-* **Persistent History:** Summaries persist in Redis cache (24h TTL) but are not yet saved to user accounts permanently.
+* **Persistent History:** Complete. Summaries are automatically saved to MongoDB per user account and accessible via `/dashboard/history` with search, type filtering, markdown copying, and client-side PDF export.
 * **Background Queues:** Future updates will integrate worker queues (BullMQ) for asynchronous long-document parsing.
 
 ---

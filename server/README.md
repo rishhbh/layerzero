@@ -23,6 +23,7 @@ The core Express.js / Bun backend service for Layerzero. Manages user authentica
   * `authLimiter`: 20 requests / 10 min window (applied to `/api/auth/*`)
   * `resendLimiter`: 3 requests / 24 hour window (applied to `/api/auth/user/resend`)
   * `aiLimiter`: 30 requests / 15 min window (applied to `/api/scrape/*`)
+  * `summaryLimiter`: 50 requests / 60 min window (applied to `/api/summaries`)
 
 ### Why Server-Sent Events (SSE) for Response Streaming (`streamResponse.js`)?
 * **Why:** Users waiting for an entire LLM completion experience high perceived latency. WebSockets introduce unnecessary bidirectional state overhead for simple server-to-client token streams.
@@ -144,6 +145,25 @@ The core Express.js / Bun backend service for Layerzero. Manages user authentica
   4. Attaches user object to `req.user`.
   5. Returns `200 OK` user profile JSON.
 
+#### `PUT /api/auth/user/update`
+* **Access:** Protected (`protectRoute`)
+* **Rate Limit:** `authLimiter` (20 requests / 10 min)
+* **Under the Hood Execution:**
+  1. Validates body via Zod (`updateAccountSchema`). Accepts optional `name`, `email`, `currentPassword`, `newPassword`.
+  2. If updating `email` and value is changed, verifies uniqueness, sets `isVerified: false`, generates 32-byte verification hex token (15m expiry), saves user, and sends verification email.
+  3. If updating `name`, applies new name to document.
+  4. If updating password, validates `currentPassword` with `bcrypt.compare()`. On match, hashes `newPassword` with bcrypt (10 salt rounds).
+  5. Saves updated `User` document and returns `200 OK` (`"Account updated successfully"`).
+
+#### `DELETE /api/auth/user/delete`
+* **Access:** Protected (`protectRoute`)
+* **Rate Limit:** `authLimiter` (20 requests / 10 min)
+* **Under the Hood Execution:**
+  1. Finds authenticated user via `req.user._id`.
+  2. Deletes user document from MongoDB via `User.findByIdAndDelete()`.
+  3. Clears `jwt` authentication cookie (`maxAge: 0`).
+  4. Returns `200 OK` (`"Account deleted successfully"`).
+
 ---
 
 ### Ingestion Routes (`/api/scrape`)
@@ -161,8 +181,8 @@ All ingestion routes require a valid `jwt` httpOnly cookie and are enforced by `
   4. Computes SHA-256 content hash `hashContent(articleText)` and generates key `summary:<HASH>`.
   5. Checks Upstash Redis cache. If hit, immediately returns stored summary (~150ms).
   6. If cache miss, routes text to selected AI provider client wrapper (`gemini`, `groq`, `gemma`, `sarvam`).
-  7. **Stream handling (`stream: true`):** Writes headers `Content-Type: text/event-stream`. Streams chunks (`event: chunk`) as generated, flushing buffer. On completion, caches final summary in Redis (24h TTL) and sends `event: done`.
-  8. **Standard handling (`stream: false`):** Awaits full text completion, caches in Redis, and returns `200 OK` `{ "output": "..." }`.
+  7. **Stream handling (`stream: true`):** Writes headers `Content-Type: text/event-stream`. Streams chunks (`event: chunk`) as generated, flushing buffer. On completion, caches final summary in Redis (24h TTL), permanently saves a `Summary` document in MongoDB, and sends `event: done`.
+  8. **Standard handling (`stream: false`):** Awaits full text completion, caches in Redis (24h TTL), persists `Summary` record in MongoDB, and returns `200 OK` `{ "output": "..." }`.
 
 #### `POST /api/scrape/doc`
 * **Access:** Protected (`protectRoute`)
@@ -176,7 +196,43 @@ All ingestion routes require a valid `jwt` httpOnly cookie and are enforced by `
   3. Hashes extracted raw text string using SHA-256 (`hashContent`) and builds Redis key `summary:<HASH>`.
   4. Queries Redis cache key. Returns cached summary instantly on hit.
   5. On miss, dispatches text to selected model wrapper (`gemini`, `groq`, `gemma`, `sarvam`).
-  6. Streams tokens via SSE (`stream: true`) or returns JSON summary (`{ "summary": "..." }`), saving result to Redis with 24-hour TTL.
+  6. Streams tokens via SSE (`stream: true`) or returns JSON summary (`{ "summary": "..." }`), saving result to Redis (24h TTL) and persisting the record in MongoDB.
+
+---
+
+### Summary History Routes (`/api/summaries`)
+
+#### `GET /api/summaries`
+* **Access:** Protected (`protectRoute`)
+* **Rate Limit:** `summaryLimiter` (50 requests / 60 min)
+* **Under the Hood Execution:**
+  1. Authenticates request via `protectRoute`, decoding the `jwt` cookie and attaching `req.user`.
+  2. Queries MongoDB `Summary.find({ userId: req.user._id }).select("-__v").sort({ createdAt: -1 })`.
+  3. Returns `200 OK` JSON with user's historical summaries:
+     ```json
+     {
+       "success": true,
+       "count": 4,
+       "summaries": [
+         {
+           "_id": "673...",
+           "userId": "673...",
+           "sourceType": "url",
+           "sourceUrl": "https://...",
+           "sourceHash": "a1b2c3...",
+           "client": "gemini",
+           "title": "Document Title",
+           "summary": "# Executive Summary\n...",
+           "metrics": {
+             "wordCount": 420,
+             "readingTimeMinutes": 2
+           },
+           "createdAt": "2026-11-19T14:00:00.000Z",
+           "updatedAt": "2026-11-19T14:00:00.000Z"
+         }
+       ]
+     }
+     ```
 
 ---
 
@@ -188,8 +244,11 @@ All ingestion routes require a valid `jwt` httpOnly cookie and are enforced by `
 | `/api/auth/user/login` | `authLimiter` | 20 req / 10 min | IP / User ID |
 | `/api/auth/user/resend` | `resendLimiter` | 3 req / 24 hours | IP / Email |
 | `/api/auth/user/check` | `authLimiter` | 20 req / 10 min | IP / User ID |
+| `/api/auth/user/update` | `authLimiter` | 20 req / 10 min | User ID / IP |
+| `/api/auth/user/delete` | `authLimiter` | 20 req / 10 min | User ID / IP |
 | `/api/scrape/web` | `aiLimiter` | 30 req / 15 min | User ID / IP |
 | `/api/scrape/doc` | `aiLimiter` | 30 req / 15 min | User ID / IP |
+| `/api/summaries` | `summaryLimiter` | 50 req / 60 min | User ID / IP |
 
 > **Note:** Rate limiters are automatically bypassed when `NODE_ENV === 'test'`.
 

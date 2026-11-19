@@ -16,6 +16,7 @@ import TokenExpired from './pages/TokenExpired';
 import ResendVerification from './pages/ResendVerification';
 import UrlSummarizer from './pages/UrlSummarizer';
 import DocSummarizer from './pages/DocSummarizer';
+import History from './pages/History';
 import Account from './pages/Account';
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
                 <Route path="/dashboard" element={<Navigate to="/dashboard/url" replace />} />
                 <Route path="/dashboard/url" element={<UrlSummarizer />} />
                 <Route path="/dashboard/doc" element={<DocSummarizer />} />
+                <Route path="/dashboard/history" element={<History />} />
                 <Route path="/dashboard/account" element={<Account />} />
               </Route>
             </Route>

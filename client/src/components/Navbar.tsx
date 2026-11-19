@@ -15,7 +15,8 @@ export const Navbar: React.FC = () => {
   const authedItems: NavItem[] = [
     { to: '/dashboard/url', label: '01 URL' },
     { to: '/dashboard/doc', label: '02 DOC' },
-    { to: '/dashboard/account', label: '03 ACCOUNT' },
+    { to: '/dashboard/history', label: '03 HISTORY' },
+    { to: '/dashboard/account', label: '04 ACCOUNT' },
   ];
 
   const publicItems: NavItem[] = [
@@ -58,16 +59,16 @@ export const Navbar: React.FC = () => {
   );
 
   const mobileNav = (
-    <nav className="md:hidden border-t border-border">
-      <div className="mx-auto max-w-[1100px] px-6 flex items-center space-x-6 h-11">
+    <nav className="md:hidden border-t border-border overflow-x-auto">
+      <div className="mx-auto max-w-[1100px] px-6 flex items-center space-x-5 h-11 min-w-max">
         {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               cn(
-                'font-mono text-[10px] uppercase tracking-[0.18em] transition-colors',
-                isActive ? 'text-foreground' : 'text-muted-foreground'
+                'font-mono text-[10px] uppercase tracking-[0.18em] transition-colors whitespace-nowrap',
+                isActive ? 'text-foreground font-semibold' : 'text-muted-foreground'
               )
             }
           >
@@ -84,9 +85,10 @@ export const Navbar: React.FC = () => {
         <div className="mx-auto max-w-[1100px] px-6 h-16 flex items-center justify-between">
           <Link
             to={user ? '/dashboard/url' : '/'}
-            className="font-heading text-2xl tracking-tight text-foreground hover:opacity-80 transition-opacity"
+            className="font-heading text-2xl tracking-tight text-foreground hover:opacity-80 transition-opacity flex items-center gap-2.5"
           >
-            layerzero
+            <img src="/logo.svg" alt="layerzero logo" className="h-6 w-6 dark:invert" />
+            <span>layerzero</span>
           </Link>
 
           {desktopNav}

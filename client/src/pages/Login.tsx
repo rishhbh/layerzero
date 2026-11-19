@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label';
 import { Card } from '../components/ui/card';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -26,6 +27,8 @@ const LOGIN_CAPABILITIES = [
 ];
 
 const Login: React.FC = () => {
+  useDocumentTitle('Sign In');
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
