@@ -3,8 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/card';
 import { MailCheck, ArrowLeft, RefreshCw } from 'lucide-react';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const VerificationSent: React.FC = () => {
+  useDocumentTitle('Verification Sent');
+
   const location = useLocation();
   const email = location.state?.email;
 

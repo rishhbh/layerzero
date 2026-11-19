@@ -22,6 +22,13 @@ Respect users' time above everything else. Your goal is to be the summarization 
 At the end of every summary, include one italicized line showing an estimated amount of reading time or pages saved.
 
 Example:
-*Saved you ~25 minutes of reading.*`;
+*Saved you ~25 minutes of reading.*
+
+Return a valid JSON object with exactly these fields:
+{
+  "title": "A concise title of maximum 5-6 words",
+  "summary": "A clear and comprehensive summary with all the above given instructions."
+}
+`;
 
 export default systemPrompt;

@@ -19,25 +19,20 @@ const SummarySchema = new mongoose.Schema({
         required: true,
     },
 
-    status: {
+    sourceHash: {
+        type: String,
+        required: true
+    },
+
+    client: {
         type: String,
         enum: [
-            "pending", 
-            "processing", 
-            "completed", 
-            "failed"
+            "groq",
+            "gemini",
+            "gemma",
+            "sarvam",
         ],
-        default: ["pending"]
-    },
-
-    totalChunks: {
-        type: Number,
-        default: 0
-    },
-
-    completedChunks: {
-        type: Number,
-        default: 0
+        default: "gemini"
     },
 
     finalSummary: {

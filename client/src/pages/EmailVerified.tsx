@@ -5,8 +5,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { CheckCircle2, XCircle, Loader2, ArrowRight, RefreshCw } from 'lucide-react';
 import api from '../lib/api';
 import { toast } from 'sonner';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const EmailVerified: React.FC = () => {
+  useDocumentTitle('Email Verified');
+
   const { token } = useParams<{ token?: string }>();
   const navigate = useNavigate();
 

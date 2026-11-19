@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const ScrollSection: React.FC<{ children: React.ReactNode, delayClass?: string }> = ({ children, delayClass = '' }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -53,6 +54,8 @@ const engines = [
 ];
 
 const About: React.FC = () => {
+  useDocumentTitle('About');
+
   return (
     <div className="mx-auto max-w-[1100px] px-6 py-16 md:py-20 text-foreground font-sans">
       {/* 01 / PLATFORM */}

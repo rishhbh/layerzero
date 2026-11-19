@@ -7,13 +7,11 @@ import groqClient from "../config/llm/groqClient.js";
 import sarvamClient from "../config/llm/sarvamClient.js";
 import redis from "../config/redis.js";
 import { webSummarySchema } from "../validators/summary.validator.js";
-import { streamingModels } from "../config/llm/streamingClients.js";
-import { streamAndCache } from "../utils/streamResponse.js";
+import Summary from "../models/Summary.js";
+import hashContent from "../utils/hashContent.js";
 
 const scrapePage = async (req, res, next) => {
   const clientFields = webSummarySchema.safeParse(req.body);
-
-  const shouldStream = req.body.stream === true || req.query.stream === "true";
 
   if (!clientFields.success) {
     return res.status(400).json({
@@ -22,25 +20,39 @@ const scrapePage = async (req, res, next) => {
   }
 
   const { url, client } = clientFields.data;
+  const sourceHash = hashContent(url);
+
+  const summaryExists = await Summary.findOne({
+    userId: req.user._id,
+    sourceHash,
+    client
+  });
+
+  if (summaryExists) {
+    return res.status(200).json({
+      output: summaryExists.finalSummary,
+      title: summaryExists.title,
+      cached: true
+    });
+  }
 
   const cacheKey = `${client}:${url}`;
   const cachedData = await redis.get(cacheKey);
 
   if (cachedData) {
-    if (shouldStream) {
-      return streamAndCache({
-        res,
-        stream: (async function* () {
-          yield cachedData;
-        })(),
-        redis,
-        cacheKey: null,
-        doneKey: "output",
-      });
-    }
+    await Summary.create({
+      userId: req.user._id,
+      title: cachedData.title,
+      finalSummary: cachedData.summary,
+      sourceType: "url",
+      sourceHash,
+      client,
+    });
 
     return res.json({
-      output: cachedData,
+      output: cachedData.summary,
+      title: cachedData.title,
+      cached: true
     });
   }
 
@@ -48,9 +60,9 @@ const scrapePage = async (req, res, next) => {
     gemma: gemmaClient,
     gemini: geminiClient,
     groq: groqClient,
-    cerebras: groqClient,
     sarvam: sarvamClient,
   };
+
   try {
     const model = models[client];
 
@@ -62,8 +74,7 @@ const scrapePage = async (req, res, next) => {
 
     const { data } = await axios.get(url, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/137.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/137.0.0.0 Safari/537.36",
       },
     });
 
@@ -75,27 +86,29 @@ const scrapePage = async (req, res, next) => {
         message: "Could not extract article content",
       });
     }
-    if (shouldStream) {
-      const streamingModel = streamingModels[client];
 
-      return streamAndCache({
-        res,
-        stream: streamingModel(article.textContent),
-        redis,
-        cacheKey,
-        doneKey: "output",
-      });
-    }
+    const rawResponse = await model(article.textContent);
+    const response = JSON.parse(rawResponse);
 
-    const summary = await model(article.textContent);
-
-    await redis.set(cacheKey, summary, {
+    await redis.set(cacheKey, rawResponse, {
       ex: 1 * 24 * 60 * 60,
     });
 
-    res.json({
-      output: summary,
+    await Summary.create({
+      userId: req.user._id,
+      title: response.title,
+      finalSummary: response.summary,
+      sourceType: "url",
+      sourceHash,
+      client,
     });
+
+    res.json({
+      output: response.summary,
+      title: response.title,
+      cached: false
+    });
+
   } catch (err) {
     next(err);
   }

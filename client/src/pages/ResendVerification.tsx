@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, MailCheck, ArrowLeft } from 'lucide-react';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const resendSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -18,6 +19,8 @@ const resendSchema = z.object({
 type ResendFormValues = z.infer<typeof resendSchema>;
 
 const ResendVerification: React.FC = () => {
+  useDocumentTitle('Resend Verification');
+
   const { resendVerification } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/card';
 import { Clock, RefreshCw, ArrowLeft } from 'lucide-react';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const TokenExpired: React.FC = () => {
+  useDocumentTitle('Link Expired');
+
   return (
     <div className="flex flex-1 min-h-0 flex-col lg:items-center lg:justify-center bg-background px-6 py-10 md:py-12">
       <Card className="w-full max-w-md rounded-[4px] border border-border bg-surface p-4 md:p-6 text-center">

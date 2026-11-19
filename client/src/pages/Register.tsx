@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label';
 import { Card } from '../components/ui/card';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -27,6 +28,8 @@ const REGISTER_POINTS = [
 ];
 
 const Register: React.FC = () => {
+  useDocumentTitle('Create Account');
+
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
