@@ -3,6 +3,7 @@ import app from "./app.js";
 import fs from "fs";
 import https from 'https';
 import connectDatabase from "./config/db.js";
+import logger from "./config/logger.js";
 
 const PORT = process.env.PORT || 3000;
 
@@ -17,10 +18,10 @@ if (process.env.NODE_ENV === 'production') {
   }, app);
 
   server.listen(process.env.HTTPS_PORT, () => {
-    console.log(`API is running on PORT: ${process.env.HTTPS_PORT}`);
+    logger.info(`API is running on PORT: ${process.env.HTTPS_PORT}`);
   });
 } else {
   app.listen(PORT, () => {
-    console.log(`Development API is running on: http://localhost:${PORT}`);
+    logger.info(`Development API is running on: http://localhost:${PORT}`);
   });
 }

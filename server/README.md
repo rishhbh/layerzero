@@ -1,289 +1,211 @@
 # Layerzero — Backend Service
 
-The core Express.js / Bun backend service for Layerzero. Manages user authentication, content parsing (PDF, DOCX, Web URLs), SHA-256 Redis caching, sliding-window rate limiting, and hybrid multi-LLM orchestration across Gemini, Groq, Ollama (Gemma), and Sarvam AI.
+The backend API for Layerzero, built with Express 5 on Bun and Node.js. It handles user authentication, in-memory document parsing, web scraping, multi-model AI routing, Redis caching, and MongoDB persistence.
 
 ---
 
-## Architectural Rationale (Why & How)
+## Project Structure
 
-### Why Upstash Redis Caching?
-* **Why:** Calling LLM APIs repeatedly for identical articles or documents wastes API tokens and introduces 5–10s of network latency per request.
-* **Solution:** Intercepts requests in `scrape.js` and `docSummary.js` using `@upstash/redis`. Hashes extracted text using SHA-256 and queries Redis before calling any LLM SDK.
-* **Impact:** Cuts repeat summary generation latency from **~8.5s to ~150ms (~98% reduction)** with zero LLM API cost.
-
-### Why SHA-256 Content Fingerprinting (`hashContent.js`)?
-* **Why:** Filenames and URLs are easily modified. Two uploaded PDFs with different filenames might contain the exact same content, while the same filename could contain updated text.
-* **Solution:** `hashContent.js` extracts raw text from PDF/DOCX buffers or scraped web pages, normalizing whitespace and computing a SHA-256 hex digest (`crypto.createHash('sha256')`).
-* **Impact:** Guarantees deterministic cache key generation based on *actual document contents*, eliminating duplicate LLM runs regardless of original filename or upload timestamp.
-
-### Why Custom Sliding Window Rate Limiting (`redisRateLimit.js`)?
-* **Why Rate Limiting:** Auth endpoints require protection against credential brute-forcing and email resend spamming, while LLM routes require protection against quota exhaustion.
-* **Why Sliding Window:** Fixed-window limiters reset counters at hard minute boundaries, creating vulnerability to double-burst spikes (e.g. 30 requests right before minute-end + 30 requests right after = 60 requests in 2 seconds). Sliding window computes a moving weighted average across window segments.
-* **Limiter Enforcements:**
-  * `authLimiter`: 20 requests / 10 min window (applied to `/api/auth/*`)
-  * `resendLimiter`: 3 requests / 24 hour window (applied to `/api/auth/user/resend`)
-  * `aiLimiter`: 30 requests / 15 min window (applied to `/api/scrape/*`)
-  * `summaryLimiter`: 50 requests / 60 min window (applied to `/api/summaries`)
-
-### Why Server-Sent Events (SSE) for Response Streaming (`streamResponse.js`)?
-* **Why:** Users waiting for an entire LLM completion experience high perceived latency. WebSockets introduce unnecessary bidirectional state overhead for simple server-to-client token streams.
-* **Solution:** `streamResponse.js` uses native HTTP SSE (`text/event-stream`). As LLM providers stream tokens, the server immediately flushes chunks (`event: chunk`) to the response stream while accumulating the full response to cache in Redis when finished (`event: done`).
-* **Impact:** Provides immediate visual feedback in the UI with low memory and CPU overhead.
-
-### Why In-Memory Document Parsing (`pdfjs-dist` & `mammoth`)?
-* **Why:** Shelling out to host CLI tools like `pdftotext` or `libreoffice` bloats Docker images, increases container build times, and risks shell injection or OS vulnerability vector exposure.
-* **Solution:** Receives uploaded files in memory using `multer.memoryStorage()`, routing buffers directly to `pdfjs-dist` (PDF) or `mammoth` (DOCX).
-* **Impact:** Pure JavaScript memory-buffer processing with zero OS-level binary dependencies.
-
-### Why JSDOM + Mozilla Readability for Web Scraping?
-* **Why:** Web pages are cluttered with navbars, sidebars, tracking scripts, advertisements, and footers. Passing raw HTML to an LLM inflates token costs and confuses model summaries.
-* **Solution:** Fetches HTML with `axios`, constructs a DOM with `jsdom`, and isolates article text using `@mozilla/readability`.
-* **Impact:** Sends only clean, relevant article text to the LLM, reducing token consumption and improving summary precision.
-
-### Why httpOnly JWT Cookies + Email Verification Flow?
-* **Why:** Storing JWT tokens in browser `localStorage` exposes them to XSS attacks. Allowing unverified emails enables account creation spam.
-* **Solution:** Issues JWTs signed with `jsonwebtoken` into `httpOnly` cookies with `SameSite=Lax`. Enforces email verification via `nodemailer` with hex tokens that expire after 15 minutes.
-* **Impact:** Eliminates JavaScript token theft vectors while verifying email authenticity before granting LLM route access.
-
-### Why Bun as Runtime / Test Runner?
-* **Why:** Node.js development cycles slow down during cold starts and require external runners (like `ts-node` or heavy Jest setups) for TypeScript/ESM testing.
-* **Solution:** Uses Bun (`oven/bun:1-alpine` in Docker) for high-performance execution and native `bun test` runner integrated with `supertest` and `mongodb-memory-server`.
-
----
-
-## Detailed Tech Stack & Selection Rationale
-
-| Category | Technology | Operational Function | Why Used (Engineering Rationale) |
-|---|---|---|---|
-| **Runtime** | Bun / Node.js | Event-driven JavaScript execution engine | High throughput I/O, fast startup time, native ESM support |
-| **Framework** | Express.js v5 | Server routing & middleware handling | Native promise rejection catching in async route handlers |
-| **Database** | MongoDB via Mongoose | NoSQL persistent document database & ODM | Flexible JSON schemas for user documents, auth tokens, and job logs |
-| **Caching** | Upstash Redis (`@upstash/redis`) | Serverless HTTP Redis client | Fast key-value lookups over HTTP without persistent TCP pool management |
-| **Rate Limiter** | Upstash Ratelimit (`@upstash/ratelimit`) | Sliding-window traffic enforcement | Prevents burst spikes and protects upstream LLM provider quotas |
-| **Authentication** | `jsonwebtoken` + `bcrypt` | JWT signing & salted password hashing | Stateless session authentication with 10-round bcrypt password hashing |
-| **Validation** | Zod | Runtime request payload validation | Enforces payload typing before entering controllers or DB layer |
-| **Email Service** | Nodemailer | Gmail SMTP transport client | Sends transactional verification email links containing hex tokens |
-| **Document Parsers**| `pdfjs-dist` + `mammoth` | In-memory text extraction | Extracts clean raw text from PDF & DOCX binary buffers directly in memory |
-| **Web Scraping** | Axios + JSDOM + Readability | HTTP fetching & article extraction | Strips DOM noise and isolates primary article content |
-| **LLM Clients** | `@google/genai`, `groq-sdk`, Ollama API, `sarvamai` | AI client wrappers & SSE stream drivers | Unified client abstraction for cloud and local language models |
-| **Testing** | Bun Test + Supertest + `mongodb-memory-server` | Integration test suite | Executes endpoint integration tests against in-memory MongoDB |
-
----
-
-## Detailed Endpoint Breakdown (Under the Hood Execution)
-
-### Health Check
-
-#### `GET /api/health`
-* **Access:** Public
-* **Rate Limit:** Unrestricted
-* **Under the Hood Execution:**
-  1. Computes runtime process uptime via `process.uptime()`.
-  2. Returns `200 OK` JSON: `{ "status": "OK", "message": "API is working properly", "uptime": 184 }`.
-
----
-
-### Auth Routes (`/api/auth/user`)
-
-#### `POST /api/auth/user/register`
-* **Access:** Public
-* **Rate Limit:** `authLimiter` (20 requests / 10 min)
-* **Under the Hood Execution:**
-  1. Passes `req.body` to Zod (`auth.validator.js`). Validates `name` (3-45 chars), valid `email`, `password` (min 8 chars).
-  2. Queries MongoDB `User.findOne({ email })`. Returns `400 Bad Request` if duplicate.
-  3. Hashes password using `bcrypt.hash(password, 10)`.
-  4. Generates 32-byte hex verification token `crypto.randomBytes(32).toString('hex')` and sets `verificationTokenExpires = Date.now() + 15 mins`.
-  5. Saves `User` document with `isVerified: false`.
-  6. Renders HTML email via `verificationEmail.js` and dispatches email link `${API_URL}/api/auth/user/verify/${token}` via Nodemailer.
-  7. Returns `201 Created` (`"You're registered, now verify email"`).
-
-#### `GET /api/auth/user/verify/:token`
-* **Access:** Public
-* **Rate Limit:** `authLimiter` (20 requests / 10 min)
-* **Under the Hood Execution:**
-  1. Reads `:token` URL parameter.
-  2. Queries MongoDB `User.findOne({ verificationToken: token, verificationTokenExpires: { $gt: Date.now() } })`.
-  3. If invalid/expired, returns `400 Bad Request` (`"Invalid or expired verification token"`).
-  4. Sets `isVerified = true`, deletes `verificationToken` and `verificationTokenExpires`, and saves user.
-  5. Returns `302 Found` redirecting browser to `${CLIENT_URL}/email-verified`.
-
-#### `POST /api/auth/user/resend`
-* **Access:** Public
-* **Rate Limit:** `resendLimiter` (3 requests / 24 hours)
-* **Under the Hood Execution:**
-  1. Validates email via Zod.
-  2. Finds user by email in MongoDB. Returns `404 Not Found` if missing.
-  3. If `user.isVerified === true`, returns `400 Bad Request` (`"User is already verified"`).
-  4. Generates fresh verification token and 15-minute expiration timestamp. Saves user.
-  5. Dispatches email via Nodemailer. Returns `200 OK` (`"Verification sent to your email successfully"`).
-
-#### `POST /api/auth/user/login`
-* **Access:** Public
-* **Rate Limit:** `authLimiter` (20 requests / 10 min)
-* **Under the Hood Execution:**
-  1. Validates `email` and `password` via Zod.
-  2. Queries MongoDB `User.findOne({ email })`. Returns `400 Bad Request` if missing.
-  3. Compares password hash via `bcrypt.compare()`. Returns `400 Bad Request` if invalid.
-  4. Checks `user.isVerified`. If `false`, returns `403 Forbidden` (`"Verify your email first"`).
-  5. Calls `generateJWT(res, user._id)`. Signs JWT with `JWT_SECRET` (7-day expiry) and sets `jwt` cookie (`httpOnly: true`, `sameSite: 'lax'`, `maxAge: 7 days`).
-  6. Returns `200 OK` `{ _id, name, email }`.
-
-#### `POST /api/auth/user/logout`
-* **Access:** Public
-* **Rate Limit:** Unrestricted
-* **Under the Hood Execution:**
-  1. Clears `jwt` cookie via `res.cookie('jwt', '', { maxAge: 0 })`.
-  2. Returns `200 OK` (`"The user has been logged out successfully"`).
-
-#### `GET /api/auth/user/check`
-* **Access:** Protected (`protectRoute`)
-* **Rate Limit:** `authLimiter` (20 requests / 10 min)
-* **Under the Hood Execution:**
-  1. `protectRoute` middleware reads `req.cookies.jwt`. Returns `401 Unauthorized` if missing.
-  2. Verifies token via `jwt.verify(token, JWT_SECRET)`. Returns `401 Unauthorized` if invalid.
-  3. Queries MongoDB `User.findById(decoded.userId).select('-password')`. Returns `404 Not Found` if user missing.
-  4. Attaches user object to `req.user`.
-  5. Returns `200 OK` user profile JSON.
-
-#### `PUT /api/auth/user/update`
-* **Access:** Protected (`protectRoute`)
-* **Rate Limit:** `authLimiter` (20 requests / 10 min)
-* **Under the Hood Execution:**
-  1. Validates body via Zod (`updateAccountSchema`). Accepts optional `name`, `email`, `currentPassword`, `newPassword`.
-  2. If updating `email` and value is changed, verifies uniqueness, sets `isVerified: false`, generates 32-byte verification hex token (15m expiry), saves user, and sends verification email.
-  3. If updating `name`, applies new name to document.
-  4. If updating password, validates `currentPassword` with `bcrypt.compare()`. On match, hashes `newPassword` with bcrypt (10 salt rounds).
-  5. Saves updated `User` document and returns `200 OK` (`"Account updated successfully"`).
-
-#### `DELETE /api/auth/user/delete`
-* **Access:** Protected (`protectRoute`)
-* **Rate Limit:** `authLimiter` (20 requests / 10 min)
-* **Under the Hood Execution:**
-  1. Finds authenticated user via `req.user._id`.
-  2. Deletes user document from MongoDB via `User.findByIdAndDelete()`.
-  3. Clears `jwt` authentication cookie (`maxAge: 0`).
-  4. Returns `200 OK` (`"Account deleted successfully"`).
-
----
-
-### Ingestion Routes (`/api/scrape`)
-
-All ingestion routes require a valid `jwt` httpOnly cookie and are enforced by `aiLimiter` (30 requests / 15 minutes).
-
-#### `POST /api/scrape/web`
-* **Access:** Protected (`protectRoute`)
-* **Rate Limit:** `aiLimiter` (30 requests / 15 min)
-* **Request Body:** `{ "url": "https://...", "client": "gemini", "stream": true }`
-* **Under the Hood Execution:**
-  1. Validates body via Zod (`summary.validator.js`).
-  2. Fetches web HTML using `axios.get(url)` with custom browser User-Agent headers.
-  3. Loads HTML into `JSDOM` virtual DOM and passes document to `@mozilla/readability`. Extracts clean `article.textContent`. Returns `400 Bad Request` if extraction fails.
-  4. Computes SHA-256 content hash `hashContent(articleText)` and generates key `summary:<HASH>`.
-  5. Checks Upstash Redis cache. If hit, immediately returns stored summary (~150ms).
-  6. If cache miss, routes text to selected AI provider client wrapper (`gemini`, `groq`, `gemma`, `sarvam`).
-  7. **Stream handling (`stream: true`):** Writes headers `Content-Type: text/event-stream`. Streams chunks (`event: chunk`) as generated, flushing buffer. On completion, caches final summary in Redis (24h TTL), permanently saves a `Summary` document in MongoDB, and sends `event: done`.
-  8. **Standard handling (`stream: false`):** Awaits full text completion, caches in Redis (24h TTL), persists `Summary` record in MongoDB, and returns `200 OK` `{ "output": "..." }`.
-
-#### `POST /api/scrape/doc`
-* **Access:** Protected (`protectRoute`)
-* **Rate Limit:** `aiLimiter` (30 requests / 15 min)
-* **Request Format:** `multipart/form-data` (`document` file, `client`, `stream`)
-* **Under the Hood Execution:**
-  1. `multer` memory storage intercepts file and loads buffer into `req.file.buffer` (max 5MB limit).
-  2. Mimetype router (`document.js` service) inspects mimetype:
-     * `application/pdf`: Calls `pdfparse.js` (`pdfjs-dist`) to extract text page by page.
-     * `application/vnd.openxmlformats-officedocument.wordprocessingml.document`: Calls `docxparse.js` (`mammoth`) to extract text string.
-  3. Hashes extracted raw text string using SHA-256 (`hashContent`) and builds Redis key `summary:<HASH>`.
-  4. Queries Redis cache key. Returns cached summary instantly on hit.
-  5. On miss, dispatches text to selected model wrapper (`gemini`, `groq`, `gemma`, `sarvam`).
-  6. Streams tokens via SSE (`stream: true`) or returns JSON summary (`{ "summary": "..." }`), saving result to Redis (24h TTL) and persisting the record in MongoDB.
-
----
-
-### Summary History Routes (`/api/summaries`)
-
-#### `GET /api/summaries`
-* **Access:** Protected (`protectRoute`)
-* **Rate Limit:** `summaryLimiter` (50 requests / 60 min)
-* **Under the Hood Execution:**
-  1. Authenticates request via `protectRoute`, decoding the `jwt` cookie and attaching `req.user`.
-  2. Queries MongoDB `Summary.find({ userId: req.user._id }).select("-__v").sort({ createdAt: -1 })`.
-  3. Returns `200 OK` JSON with user's historical summaries:
-     ```json
-     {
-       "success": true,
-       "count": 4,
-       "summaries": [
-         {
-           "_id": "673...",
-           "userId": "673...",
-           "sourceType": "url",
-           "sourceUrl": "https://...",
-           "sourceHash": "a1b2c3...",
-           "client": "gemini",
-           "title": "Document Title",
-           "summary": "# Executive Summary\n...",
-           "metrics": {
-             "wordCount": 420,
-             "readingTimeMinutes": 2
-           },
-           "createdAt": "2026-11-19T14:00:00.000Z",
-           "updatedAt": "2026-11-19T14:00:00.000Z"
-         }
-       ]
-     }
-     ```
-
----
-
-## Rate Limiting Specifications
-
-| Endpoint | Limiter Instance | Rate Limit | Identifier |
-|---|---|---|---|
-| `/api/auth/user/register` | `authLimiter` | 20 req / 10 min | IP / User ID |
-| `/api/auth/user/login` | `authLimiter` | 20 req / 10 min | IP / User ID |
-| `/api/auth/user/resend` | `resendLimiter` | 3 req / 24 hours | IP / Email |
-| `/api/auth/user/check` | `authLimiter` | 20 req / 10 min | IP / User ID |
-| `/api/auth/user/update` | `authLimiter` | 20 req / 10 min | User ID / IP |
-| `/api/auth/user/delete` | `authLimiter` | 20 req / 10 min | User ID / IP |
-| `/api/scrape/web` | `aiLimiter` | 30 req / 15 min | User ID / IP |
-| `/api/scrape/doc` | `aiLimiter` | 30 req / 15 min | User ID / IP |
-| `/api/summaries` | `summaryLimiter` | 50 req / 60 min | User ID / IP |
-
-> **Note:** Rate limiters are automatically bypassed when `NODE_ENV === 'test'`.
-
----
-
-## Running Backend Tests
-
-```bash
-cd server
-bun test
+```text
+server/
+├── src/
+│   ├── config/             # Database, Redis, logger, system prompts
+│   │   ├── llm/            # Model client wrappers (Gemini, Groq, Sarvam, Gemma)
+│   │   ├── db.js           # Mongoose MongoDB connection
+│   │   ├── logger.js       # Pino logger instance
+│   │   ├── redis.js        # Upstash Redis client
+│   │   └── systemPrompt.js # Base summarization prompt
+│   ├── controllers/        # Request handlers (auth, scrape, docSummary, summary)
+│   ├── middlewares/        # Auth verification, rate limiters, error handling
+│   ├── models/             # Mongoose schemas (User, Summary)
+│   ├── services/           # Document extraction logic (PDF, DOCX)
+│   ├── utils/              # Content hashing helper
+│   ├── validators/         # Zod schemas for request validation
+│   ├── app.js              # Express app configuration and middleware setup
+│   └── server.js           # Entry point (HTTP / HTTPS listener)
+├── tests/                  # Integration tests (bun test, supertest)
+├── .env.example            # Environment variable template
+└── package.json
 ```
 
-Executes integration tests for `/api/health` and `/api/auth/*` against an isolated `mongodb-memory-server` database instance.
+---
+
+## Supported AI Models
+
+Model selection is passed in the request body as `client`:
+
+| Value | Model | Client File | Notes |
+|---|---|---|---|
+| `gemini` | `GEMINI_MODEL_NAME` (default: `gemini-3.5-flash-lite`) | `config/llm/geminiClient.js` | Uses `@google/genai` SDK |
+| `groq` | `GROQ_MODEL_NAME` (default: `openai/gpt-oss-20b`) | `config/llm/groqClient.js` | Uses `groq-sdk` with JSON mode |
+| `sarvam` | `sarvam-30b` | `config/llm/sarvamClient.js` | Uses `sarvamai` SDK (Hindi/Hinglish) |
+| `gemma` | `OLLAMA_MODEL` (default: `gemma:4b`) | `config/llm/gemmaClient.js` | Calls local Ollama `/api/chat` endpoint |
 
 ---
 
-## Environment Variable Schema
+## Request Processing Flow
 
-```env
-PORT=5000
-HTTPS_PORT=5001
-SSL_KEY_PATH=
-SSL_CERT_PATH=
-MONGODB_URI=mongodb://localhost:27017/layerzero
-OLLAMA_MODEL=gemma:4b
-OLLAMA_BASE_URL=http://localhost:11434
-GEMINI_API_KEY=your_gemini_api_key
-GROQ_API_KEY=your_groq_api_key
-SARVAM_API_KEY=your_sarvam_api_key
-JWT_SECRET=your_jwt_secret
-NODE_ENV=development
-CLIENT_URL=http://localhost:5173
-API_URL=http://localhost:5000
-EMAIL_USER=your_email@gmail.com
-EMAIL_APP_PASSWORD=your_gmail_app_password
-UPSTASH_REDIS_REST_URL=your_upstash_redis_url
-UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+### Document Summarization (`POST /api/scrape/doc`)
+1. Accepts `multipart/form-data` with a `document` file (PDF or DOCX, max 5MB) and `client`.
+2. Extracts raw text in memory using `pdfjs-dist` (for PDFs) or `mammoth` (for DOCX).
+3. Computes a SHA-256 hash of the extracted text (`hashContent.js`).
+4. Checks MongoDB for a summary matching `userId`, `sourceHash`, and `client`.
+5. Checks Upstash Redis for key `${client}:${sourceHash}`.
+6. If not cached, calls the selected model client.
+7. Strips any markdown fences (` ```json `) from the model output and parses it as JSON `{ title, summary }`.
+8. Saves the response to Redis (24-hour expiration) and to MongoDB in the `Summary` collection.
+9. Returns `{ output: summary, title: title, cached: boolean }`.
+
+### Web Article Summarization (`POST /api/scrape/web`)
+1. Accepts JSON `{ "url": "...", "client": "..." }`.
+2. Fetches the page HTML via Axios with a standard browser User-Agent.
+3. Parses HTML with JSDOM and extracts readable article text using `@mozilla/readability`.
+4. Computes a SHA-256 hash of the URL and checks MongoDB and Redis (`${client}:${url}`).
+5. If not cached, calls the selected model client, cleans the response, caches it in Redis, and stores it in MongoDB.
+6. Returns `{ output: summary, title: title, cached: boolean }`.
+
+---
+
+## Rate Limiting
+
+Rate limiting is enforced with `@upstash/ratelimit` using sliding windows:
+
+| Limiter | Limit | Target Routes |
+|---|---|---|
+| `authLimiter` | 20 requests per 10 minutes | `/api/auth/user/*` |
+| `resendLimiter` | 3 requests per 24 hours | `/api/auth/user/resend` |
+| `aiLimiter` | 30 requests per 15 minutes | `/api/scrape/*` |
+| `summaryLimiter` | 50 requests per 60 minutes | `/api/summaries` |
+
+---
+
+## API Reference
+
+### Auth Endpoints (`/api/auth/user`)
+
+#### `POST /register`
+- **Body:** `{ "name": "...", "email": "...", "password": "..." }`
+- **Action:** Creates an unverified user record, generates a 15-minute token, and sends a verification email.
+
+#### `GET /verify/:token`
+- **Action:** Validates the token, sets `isVerified: true`, and redirects to `${CLIENT_URL}/email-verified`.
+
+#### `POST /resend`
+- **Body:** `{ "email": "..." }`
+- **Action:** Generates a new verification token and resends the email.
+
+#### `POST /login`
+- **Body:** `{ "email": "...", "password": "..." }`
+- **Action:** Verifies credentials and sets an `httpOnly` JWT cookie (`SameSite=Lax`, 7-day expiration).
+
+#### `POST /logout`
+- **Action:** Clears the `jwt` cookie.
+
+#### `GET /check`
+- **Header:** Cookie with valid JWT.
+- **Returns:** Current user object without password hash.
+
+#### `PUT /update`
+- **Header:** Cookie with valid JWT.
+- **Body:** Fields to update (`name`, `email`, `currentPassword`, `newPassword`).
+
+#### `DELETE /delete`
+- **Header:** Cookie with valid JWT.
+- **Action:** Deletes user record and clears JWT cookie.
+
+---
+
+### Summarization Endpoints (`/api/scrape`)
+
+#### `POST /doc`
+- **Header:** Cookie with valid JWT, `Content-Type: multipart/form-data`
+- **Form Data:**
+  - `document`: File (PDF or DOCX)
+  - `client`: `gemini` | `groq` | `sarvam` | `gemma`
+- **Returns:**
+  ```json
+  {
+    "output": "Markdown formatted summary...",
+    "title": "Document Title",
+    "cached": false
+  }
+  ```
+
+#### `POST /web`
+- **Header:** Cookie with valid JWT, `Content-Type: application/json`
+- **Body:**
+  ```json
+  {
+    "url": "https://example.com/article",
+    "client": "gemini"
+  }
+  ```
+- **Returns:** Same shape as `/doc`.
+
+---
+
+### History Endpoints (`/api/summaries`)
+
+#### `GET /`
+- **Header:** Cookie with valid JWT.
+- **Returns:**
+  ```json
+  {
+    "success": true,
+    "count": 5,
+    "summaries": [
+      {
+        "_id": "...",
+        "title": "...",
+        "finalSummary": "...",
+        "sourceType": "pdf",
+        "client": "gemini",
+        "createdAt": "..."
+      }
+    ]
+  }
+  ```
+
+---
+
+## Environment Variables
+
+| Variable | Description | Example / Default |
+|---|---|---|
+| `PORT` | HTTP server port | `5000` |
+| `HTTPS_PORT` | HTTPS server port (production) | `5001` |
+| `NODE_ENV` | Environment mode | `development` |
+| `LOG_LEVEL` | Pino log level | `debug` |
+| `CLIENT_URL` | Frontend URL for CORS and redirects | `http://localhost:5173` |
+| `API_URL` | Base backend URL | `http://localhost:5000` |
+| `MONGODB_URI` | MongoDB connection string | `mongodb://localhost:27017/layerzero` |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST endpoint | `https://...upstash.io` |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token | `...` |
+| `JWT_SECRET` | Secret key for JWT signing | `...` |
+| `EMAIL_USER` | Gmail address for Nodemailer | `example@gmail.com` |
+| `EMAIL_APP_PASSWORD` | Gmail App Password | `...` |
+| `GEMINI_API_KEY` | Google Gemini API key | `...` |
+| `GEMINI_MODEL_NAME` | Gemini model name | `gemini-3.5-flash-lite` |
+| `GROQ_API_KEY` | Groq API key | `...` |
+| `GROQ_MODEL_NAME` | Groq model name | `openai/gpt-oss-20b` |
+| `SARVAM_API_KEY` | Sarvam AI API key | `...` |
+| `OLLAMA_BASE_URL` | Local Ollama host URL | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Local Ollama model tag | `gemma:4b` |
+
+---
+
+## Local Development
+
+```bash
+# Install dependencies
+bun install   # or: npm install
+
+# Copy environment template
+cp .env.example .env
+
+# Run in development mode with auto-reload
+bun dev       # or: npm run dev
+
+# Run integration tests
+bun test
 ```

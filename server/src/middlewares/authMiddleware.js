@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import logger from '../config/logger.js';
 
 export const protectRoute = async (req, res, next) => {
     try {
@@ -25,7 +26,7 @@ export const protectRoute = async (req, res, next) => {
         next();
 
     } catch (err) {
-        console.log(`Some error occured at route protection endpoint: ${err}`);
+        logger.error({err}, `Some error occured`);
         next(err);
     }
 }

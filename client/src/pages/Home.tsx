@@ -38,8 +38,8 @@ interface Feature {
 const features: Feature[] = [
   { icon: <Globe className="h-4 w-4" />, title: "Web Scraping & Parsing", description: "Strips away noise, sidebars, and ads to extract clean editorial text from any website URL." },
   { icon: <FileText className="h-4 w-4" />, title: "Document Processing", description: "Upload PDF or DOCX files directly. The structural parser maintains context across complex pages." },
-  { icon: <Layers className="h-4 w-4" />, title: "Gemini 3.5 Flash", description: "Cloud model optimized for deep context synthesis across extensive multi-page documents." },
-  { icon: <Sparkles className="h-4 w-4" />, title: "Groq GPT-OSS-120B", description: "Ultra-fast 120B open-weights inference powered by Groq LPU hardware." },
+  { icon: <Layers className="h-4 w-4" />, title: "Gemini 3.5 Flash Lite", description: "Cloud model optimized for deep context synthesis across extensive multi-page documents." },
+  { icon: <Sparkles className="h-4 w-4" />, title: "Groq GPT-OSS-20B", description: "Ultra-fast 20B open-weights inference powered by Groq LPU hardware." },
   { icon: <Cpu className="h-4 w-4" />, title: "Gemma Local Inference", description: "On-device Gemma models for complete privacy without sending data outside your environment." },
   { icon: <Languages className="h-4 w-4" />, title: "Sarvam Multilingual", description: "Native support for Hinglish and Indian regional languages without phrase loss." },
 ];
@@ -97,7 +97,7 @@ const Home: React.FC = () => {
                 <div className="space-y-3">
                   <div>
                     <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground block mb-1">Provider</span>
-                    <span className="text-sm font-medium text-foreground">Groq GPT-OSS-120B</span>
+                    <span className="text-sm font-medium text-foreground">Groq GPT-OSS-20B</span>
                   </div>
                   <div>
                     <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground block mb-1">Source</span>

@@ -48,7 +48,7 @@ const pipeline = [
 
 const engines = [
   { name: "GEMINI", tag: "Cloud", body: "Massive context windows and state-of-the-art reasoning for complex synthesis across large documents." },
-  { name: "GROQ", tag: "High-Speed", body: "Open-weights 120B model served at speed via Groq LPU hardware. A fast middle ground." },
+  { name: "GROQ", tag: "High-Speed", body: "Open-weights 20B model served at speed via Groq LPU hardware. A fast middle ground." },
   { name: "GEMMA", tag: "Local / Privacy", body: "Lightweight open models run on your hardware — zero data transmission for confidential content." },
   { name: "SARVAM", tag: "Multilingual", body: "Purpose-built for Hinglish and Indian regional languages without phrase loss." },
 ];

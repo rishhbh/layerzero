@@ -1,14 +1,19 @@
+import logger from "../config/logger.js";
+
 const handleError = (err, req, res, next) => {
-    if(process.env.NODE_ENV !== 'production') {
-        console.log(`\nMessage: ${err.customMessage}\nError: ${err.message}\nStack: ${err.stack}`);
-        return res.status(500).json({
-            message: err.customMessage || "Something went wrong",
-            error: err.message,
-            stack: err.stack
-        });
-    }
-    return res.status(500).json({
-        error: 'Internal server error occured'
+    const statusCode = err.statusCode || err.status || 500;
+
+    logger.error({
+        err,
+        method: req.method,
+        url: req.originalUrl
+    }, "Request failed");
+
+    return res.status(statusCode).json({
+        success: false,
+        message: statusCode >= 500 && process.env.NODE_ENV === "production"
+            ? "Internal server error"
+            : (err.message || "Something went wrong")
     });
 };
 
