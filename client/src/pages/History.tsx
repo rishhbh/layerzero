@@ -29,8 +29,8 @@ import { cn } from '../lib/utils';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 const MODEL_NAMES: Record<string, string> = {
-  gemini: 'Gemini 3.5 Flash',
-  groq: 'Groq GPT-OSS-120B',
+  gemini: 'Gemini 3.5 Flash Lite',
+  groq: 'Groq GPT-OSS-20B',
   sarvam: 'Sarvam 30B',
   gemma: 'Gemma 4',
 };

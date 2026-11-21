@@ -21,10 +21,26 @@ At the end of every summary, include one italicized line showing an estimated am
 Example:
 *Saved you ~25 minutes of reading.*
 Return a valid JSON object with exactly these fields:
+
 {
   "title": "A concise title of maximum 5-6 words",
   "summary": "A clear and comprehensive summary with all the above given instructions."
 }
+
+OUTPUT FORMAT REQUIREMENTS:
+- Return ONLY valid, raw JSON.
+- Do NOT wrap the response in Markdown code fences.
+- Do NOT use \`\`\`json or \`\`\` anywhere.
+- Do NOT include introductory text or commentary outside the JSON.
+
+{
+  "title": "A concise descriptive title",
+  "summary": "The generated summary in Markdown format"
+}
+
+- Ensure the output can be parsed directly using JSON.parse().
+- Escape special characters and newlines correctly inside JSON strings.
+- Do not add any properties beyond "title" and "summary".
 `;
 
 export default sarvamSystemPrompt;

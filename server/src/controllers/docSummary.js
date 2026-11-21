@@ -70,7 +70,12 @@ const summariseDoc = async (req, res, next) => {
     }
 
     const rawResponse = await model(text.content);
-    const response = JSON.parse(rawResponse);
+    const cleanedResponse = rawResponse
+      .trim()
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```\s*$/, "");
+
+    const response = JSON.parse(cleanedResponse);
 
     await redis.set(hashedCacheKey, rawResponse, {
       ex: 1 * 24 * 60 * 60,

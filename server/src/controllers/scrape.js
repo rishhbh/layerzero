@@ -88,7 +88,12 @@ const scrapePage = async (req, res, next) => {
     }
 
     const rawResponse = await model(article.textContent);
-    const response = JSON.parse(rawResponse);
+    const cleanedResponse = rawResponse
+      .trim()
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```\s*$/, "");
+
+    const response = JSON.parse(cleanedResponse);
 
     await redis.set(cacheKey, rawResponse, {
       ex: 1 * 24 * 60 * 60,

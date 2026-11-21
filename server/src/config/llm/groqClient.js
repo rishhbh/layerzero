@@ -6,7 +6,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const groqClient = async (text) => {
     try {
         const response = await groq.chat.completions.create({
-            model: "openai/gpt-oss-120b",
+            model: process.env.GROQ_MODEL_NAME,
             messages: [
                 {
                     role: 'system',
